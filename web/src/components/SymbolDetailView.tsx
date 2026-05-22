@@ -1,7 +1,9 @@
 import { X } from "lucide-react";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
+import { CartesianGrid, Line, XAxis, LineChart } from "recharts";
 
 export default function SymbolDetailView() {
     return (
@@ -36,6 +38,7 @@ export default function SymbolDetailView() {
                         </div>
                     </div>
                     {/* Value History Chart */}
+                    <SymbolDetailViewChart />
 
                     {/* Additional Details */}
                     <div className="flex gap-2 flex-col">
@@ -66,6 +69,65 @@ export default function SymbolDetailView() {
                         <p className="pl-2">Clock synchronized</p>
                     </div>
                 </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+export function SymbolDetailViewChart() {
+    const chartData = [
+        { time: "14.25", value: 15 },
+        { time: "14.27", value: 24 },
+        { time: "14.29", value: 38 },
+        { time: "14.30", value: 19 },
+    ]
+
+    const chartConfig = {
+        value: {
+            label: "Value",
+            color: "var(--chart-1)",
+        },
+    } satisfies ChartConfig
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex  justify-center">
+                    <CardTitle className="text-lg">Value History - 5 mins</CardTitle>
+                </div>
+                <CardDescription>
+                    Got a lot of changes to make, Maybe i can have the min as the x axis but have the hover on the line show the number and second precision
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig}>
+                    <LineChart
+                        accessibilityLayer
+                        data={chartData}
+                        margin={{
+                            left: 12,
+                            right: 12,
+                        }}
+                    >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey="time"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={2}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Line
+                            dataKey="value"
+                            type="linear"
+                            stroke="var(--color-value)"
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                    </LineChart>
+                </ChartContainer>
             </CardContent>
         </Card>
     )

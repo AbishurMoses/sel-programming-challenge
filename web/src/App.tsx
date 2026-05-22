@@ -1,15 +1,16 @@
 import './App.css'
 import AuthenticationForm from './components/AuthenticationForm'
 import SymbolDetailView from './components/SymbolDetailView'
+import SymbolsDashboard  from './components/SymbolsDashboard'
 import UserMenu from './components/UserMenu'
 
 function App() {
   return (
-    <div>
-      <p className='font-bold text-2xl'>Hello Dashboard</p>
+    <div className="flex flex-col">
       <AuthenticationForm />
       <UserMenu />
       <SymbolDetailView />
+      <SymbolsDashboard />
     </div>
   )
 }
