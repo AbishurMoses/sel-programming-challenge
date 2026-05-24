@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 
 export default function UserMenu() {
     return (
-        <Card className="w-full max-w-sm">
+        <Card className="w-full">
             <CardHeader className="flex justify-center">
                 <CardTitle className="font-bold">Settings</CardTitle>
             </CardHeader>
@@ -25,6 +25,7 @@ export default function UserMenu() {
             </CardContent>
             <CardAction className="flex justify-center w-full">
                 <Button >Save Changes</Button>
+                 <Button >Cancel Changes</Button>
             </CardAction>
         </Card>
     )

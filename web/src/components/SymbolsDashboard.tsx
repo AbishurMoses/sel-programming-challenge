@@ -7,43 +7,8 @@ import { Card } from "./ui/card";
 
 export default function SymbolsDashboard() {
     return (
-        <div className="max-w-6xl">
-            <ConnectionStatus />
+        <Card className="max-w-6xl">
             <DataTableComponent columns={columns} data={symbols} />
-        </div>
-    )
-}
-
-export function ConnectionStatus() {
-    const connectionData = {
-        connected: true,
-        user:
-            { name: "testuser" },
-        server: "192.168.3.2",
-        lastUpdated: new Date(Date.now() - 2000),
-    }
-
-    return (
-        <Card>
-            <div className="flex items-center gap-4">
-                {connectionData.connected ?
-                    <div className="flex items-center gap-1">
-                        <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
-                        <p>Connected</p>
-                    </div> :
-                    <div className="flex items-center gap-1">
-                        <span className="h-3 w-3 rounded-full bg-red-500" />
-                        <p>Disconnected</p>
-                    </div>}
-                |
-                <p>User: {connectionData.user.name}</p>
-                |
-                <p>Server: {connectionData.server}</p>
-            </div>
-            <div>
-                <Button>Refresh</Button>
-                <Button>Logout</Button>
-            </div>
         </Card>
     )
 }
