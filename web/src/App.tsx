@@ -16,10 +16,12 @@ function App() {
           </div>
         }
         {isAuthenticated &&
-          <div className="flex flex-col">
+          <div className="flex flex-col h-screen">
             <Navbar />
-            <SymbolsDashboard />
-            <SymbolDetailView />
+            <main className="flex-1 flex items-center justify-center w-full bg-blue-200">
+              <SymbolsDashboard />
+              {/* <SymbolDetailView /> */}
+            </main>
           </div >
         }
       </div>

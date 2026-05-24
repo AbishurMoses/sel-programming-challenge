@@ -7,7 +7,7 @@ import { Card } from "./ui/card";
 
 export default function SymbolsDashboard() {
     return (
-        <Card className="max-w-6xl">
+        <Card className="w-full">
             <DataTableComponent columns={columns} data={symbols} />
         </Card>
     )
