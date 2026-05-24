@@ -122,7 +122,7 @@ export default function SymbolDetailView() {
                     </CardContent>
                 </Card>
 
-                <Card className="md:col-span-2">
+                <Card className="md:col-span-2"> 
                     <CardHeader>
                         <CardTitle className="text-base">Quality Details</CardTitle>
                     </CardHeader>
