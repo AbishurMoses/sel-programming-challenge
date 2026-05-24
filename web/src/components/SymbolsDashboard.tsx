@@ -5,10 +5,14 @@ import { Button } from "./ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { Card } from "./ui/card";
 
-export default function SymbolsDashboard() {
+interface SymbolsDashboardProps {
+    onSymbolClick: () => void;
+}
+
+export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProps) {
     return (
-        <Card className="w-full">
-            <DataTableComponent columns={columns} data={symbols} />
+        <Card className="w-full px-4">
+            <DataTableComponent columns={columns} data={symbols} onRowClick={onSymbolClick} />
         </Card>
     )
 }

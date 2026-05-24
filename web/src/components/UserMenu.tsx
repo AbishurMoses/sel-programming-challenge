@@ -23,7 +23,7 @@ export default function UserMenu() {
                     <AutoStartPolling />
                 </div>
             </CardContent>
-            <CardAction className="flex justify-center w-full">
+            <CardAction className="flex justify-center w-full pt-6 gap-2">
                 <Button >Save Changes</Button>
                  <Button >Cancel Changes</Button>
             </CardAction>
