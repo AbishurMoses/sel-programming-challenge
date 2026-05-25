@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import AuthenticationForm from './components/AuthenticationForm'
 import Navbar from './components/Navbar'
@@ -6,10 +6,22 @@ import SymbolDetailView from './components/SymbolDetailView'
 import SymbolsDashboard from './components/SymbolsDashboard'
 import { Dialog, DialogContent } from './components/ui/dialog'
 import { TooltipProvider } from './components/ui/tooltip'
+import { httpClient } from './services/httpClient';
+
 
 function App() {
   const isAuthenticated = true;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Moving it here ensures MSW is fully active before the request fires
+    httpClient.get('auth/token', {
+      headers: { Authorization: `Basic ${btoa('testuser:testpass')}` },
+    })
+      .then(r => console.log('got from MSW:', r.data))
+      .catch(err => console.error('Axios Error:', err));
+  }, []);
+
 
   return (
     <TooltipProvider>

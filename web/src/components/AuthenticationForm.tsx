@@ -1,4 +1,4 @@
-import { Input } from "@/components/ui/input"
+ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -20,8 +20,8 @@ export default function AuthenticationForm() {
     });
     const [errors, setErrors] = useState({
         serverurl: { failed: false, comment: "Only 192.168.3.2 is allowed." },
-        username: { failed: false, comment: "Only admin is allowed." },
-        password: { failed: false, comment: "Only admin is allowed." },
+        username: { failed: false, comment: "" },
+        password: { failed: false, comment: "" },
     });
 
     const formValidation = (field: string, value: string) => {
