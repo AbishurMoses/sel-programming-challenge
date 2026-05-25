@@ -7,6 +7,7 @@ import {
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { LogOut, RefreshCw, Settings } from "lucide-react";
 import UserMenu from "./UserMenu";
+import { apiService } from "@/services/apiService";
 
 export default function Navbar() {
     const [isConnected, setIsConnected] = useState(true);
@@ -15,6 +16,11 @@ export default function Navbar() {
         server: "192.168.3.2"
     })
     const lastUpdated = new Date(Date.now() - 2000)
+
+    async function logout() {
+        apiService.clearToken()
+        apiService.onUnauthorized?.()
+    }
 
     return (
         <nav className="w-full h-16 flex items-center justify-between sticky top-0 z-50 border-b backdrop-blur px-4">
@@ -70,7 +76,7 @@ export default function Navbar() {
                 </Dialog>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <LogOut className="h-5 w-5 cursor-pointer transition" />
+                        <LogOut onClick={() => logout()} className="h-5 w-5 cursor-pointer transition" />
                     </TooltipTrigger>
                     <TooltipContent>
                         <p>Logout</p>

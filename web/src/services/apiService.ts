@@ -1,6 +1,7 @@
-import type { AuthCredentials, AuthTokenResponse } from '@/types/api';
+import type { ApiError, AuthCredentials, AuthTokenResponse } from '@/types/api';
 import { httpClient } from './httpClient';
 import type { AxiosInstance } from 'axios';
+import axios from 'axios';
 
 const TOKEN_KEY = 'sel.token';
 const EXPIRY_KEY = 'sel.tokenExpiry';
@@ -9,10 +10,12 @@ export class SELApiService {
     private token: string | null = null;
     private tokenExpiry: number | null = null;
     private http: AxiosInstance;
+    public onUnauthorized?: () => void;
 
     constructor(http: AxiosInstance = httpClient) {
         this.http = http;
         this.hydrateFromStorage();
+        this.installInterceptors();
     }
 
     setToken(token: string, expiresInSeconds: number): void {
@@ -55,15 +58,91 @@ export class SELApiService {
         this.tokenExpiry = expiry;
     }
 
-    async authenticate(credentials: AuthCredentials): Promise<boolean> {
-        const basic = btoa(`${credentials.username}:${credentials.password}`);
-
-        const { data } = await this.http.get<AuthTokenResponse>('/auth/token', {
-            headers: { Authorization: `Basic ${basic}` },
+    private installInterceptors(): void {
+        this.http.interceptors.request.use((config) => {
+            // Doesn't overrite authentication. Protects basic auth (authentication)
+            if (config.headers.Authorization) {
+                return config;
+            }
+            const token = this.getToken();
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            return config;
         });
 
-        this.setToken(data.AccessToken, data.ExpiresIn);
-        return true;
+        this.http.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response?.status === 401) {
+                    this.clearToken();
+                    this.onUnauthorized?.();
+                }
+                return Promise.reject(error);
+            },
+        );
+    }
+
+    private handleError(error: unknown): never {
+        if (axios.isAxiosError(error)) {
+            if (error.code === 'ECONNABORTED') {
+                throw {
+                    message: 'Request timed out',
+                    timestamp: new Date(),
+                } satisfies ApiError;
+            }
+
+            if (!error.response) {
+                throw {
+                    message: 'Network connection failed',
+                    timestamp: new Date(),
+                } satisfies ApiError;
+            }
+
+            const status = error.response.status;
+            const detail =
+                (error.response.data as { detail?: string } | undefined)?.detail;
+
+            if (status === 401) {
+                throw {
+                    message: detail ?? 'Invalid credentials',
+                    status,
+                    timestamp: new Date(),
+                } satisfies ApiError;
+            }
+
+            throw {
+                message: detail ?? `Request failed (${status})`,
+                status,
+                timestamp: new Date(),
+            } satisfies ApiError;
+        }
+
+        if (axios.isCancel(error)) {
+            throw {
+                message: 'Request cancelled',
+                timestamp: new Date(),
+                cancelled: true,
+            } satisfies ApiError;
+        }
+
+        throw {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date(),
+        } satisfies ApiError;
+    }
+
+    async authenticate(credentials: AuthCredentials): Promise<boolean> {
+        try {
+            const basic = btoa(`${credentials.username}:${credentials.password}`);
+            const { data } = await this.http.get<AuthTokenResponse>('/auth/token', {
+                headers: { Authorization: `Basic ${basic}` },
+            });
+            this.setToken(data.AccessToken, data.ExpiresIn);
+            return true;
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 }
 
