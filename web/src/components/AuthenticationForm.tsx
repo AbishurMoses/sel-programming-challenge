@@ -32,12 +32,12 @@
     const [submitError, setSubmitError] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: { target: { id: any; value: any } }) => {
       const { id, value } = e.target
       setFormData((prev) => ({ ...prev, [id]: value }))
     }
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: { preventDefault: () => void }) => {
       e.preventDefault()
       setSubmitError(null)
 
@@ -64,6 +64,7 @@
       } catch (err) {
         const apiErr = err as ApiError
         setSubmitError(apiErr.message ?? "Authentication failed")
+        
       } finally {
         setIsSubmitting(false)
       }

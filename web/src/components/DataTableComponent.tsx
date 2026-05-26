@@ -18,7 +18,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "./ui/button"
-import React from "react"
+import { useState } from "react"
 import { Input } from "./ui/input"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 
@@ -26,16 +26,20 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     onRowClick?: () => void;
+    startedPolling: boolean;
+    startPolling: (startedPolling: boolean) => void;
 }
 
 export function DataTableComponent<TData, TValue>({
     columns,
     data,
     onRowClick,
+    startedPolling,
+    startPolling,
 }: DataTableProps<TData, TValue>) {
 
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    const [sorting, setSorting] = useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
         []
     )
 
@@ -79,7 +83,10 @@ export function DataTableComponent<TData, TValue>({
                     className="max-w-sm"
                 />
                 <div className="flex flex-row items-center gap-2">
-                    <Button>Start Polling</Button>
+                    <Button onClick={() => {
+                        startPolling(!startedPolling)
+                        console.log("Polling started: ", !startedPolling)
+                    }}>{startedPolling ? "Stop Polling" : "Start Polling"}</Button>
                     <p>2s interval</p>
                 </div>
             </div>

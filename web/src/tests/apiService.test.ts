@@ -104,7 +104,7 @@ describe('SELApiService', () => {
     it('normalizes invalid credentials into ApiError', async () => {
         const { service } = makeService();
         await expect(
-            service.authenticate({ serverUrl: BASE, username: 'bad', password: 'bad' }),
+            service.authenticate({ serverUrl: BASE, username: 'wrong', password: 'bad' }),
         ).rejects.toMatchObject({
             message: 'Invalid credentials',
             status: 401,

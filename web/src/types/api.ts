@@ -25,6 +25,12 @@ export interface Symbol {
   description?: string;  // Mapped from API's PascalCase "Description" field
 }
 
+export interface rawApiSymbol {
+  Name: string; 
+  Type: string; 
+  Description?: string;  
+}
+
 export interface SymbolValue {
   symbolName: string;
   stVal: number;

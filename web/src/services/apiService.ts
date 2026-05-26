@@ -1,4 +1,4 @@
-import type { ApiError, AuthCredentials, AuthTokenResponse } from '@/types/api';
+import type { ApiError, AuthCredentials, AuthTokenResponse, Symbol, rawApiSymbol } from '@/types/api';
 import { httpClient } from './httpClient';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
@@ -75,8 +75,9 @@ export class SELApiService {
             (response) => response,
             (error) => {
                 if (error.response?.status === 401) {
+                    const wasAuthenticated = this.token !== null;
                     this.clearToken();
-                    this.onUnauthorized?.();
+                    if (wasAuthenticated) this.onUnauthorized?.();
                 }
                 return Promise.reject(error);
             },
@@ -147,6 +148,25 @@ export class SELApiService {
         } catch (error) {
             this.handleError(error);
         }
+    }
+
+
+    // Need to map variable from rawApiSymbol to match Symbol
+    async getSymbols(): Promise<Symbol[]> {
+        try {
+            const { data } = await this.http.get<rawApiSymbol[]>('/logic-engine/symbols');
+            return data.map((s) => this.mapSymbol(s));
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    private mapSymbol(raw: rawApiSymbol): Symbol {
+        return {
+            name: raw.Name,
+            type: raw.Type,
+            description: raw.Description,
+        };
     }
 }
 
