@@ -1,4 +1,4 @@
-import {type rawApiSymbol} from '../types/api';
+import { type rawApiSymbol } from '../types/api';
 
 export const symbols: rawApiSymbol[] = [
   { "Name": "AirFlowVelocity", "Type": "INT", "Description": "Primary intake air flow speed" },
@@ -62,5 +62,94 @@ export const symbols: rawApiSymbol[] = [
   { "Name": "UpsBatteryCapacity", "Type": "INT", "Description": "Backup critical power UPS battery state-of-charge" },
   { "Name": "VacuumSuctionLevel", "Type": "INT", "Description": "Condenser vacuum system mercury column displacement" },
   { "Name": "WaterTurbidityValue", "Type": "INT", "Description": "Influent intake filtration optical turbidity" },
-  { "Name": "WindTunnelStaticPres", "Type": "INT", "Description": "Aerodynamic testing chamber static air pressure" }
 ]
+
+// Define a map of custom engineering units and ranges to make the dashboard look highly realistic
+const METRIC_PROFILES: Record<string, { units: string; min: number; max: number }> = {
+  Velocity: { units: "m/s", min: 10, max: 95 },
+  Humidity: { units: "%", min: 30, max: 85 },
+  Vibration: { units: "mm/s", min: 1, max: 15 },
+  Voltage: { units: "V", min: 220, max: 245 },
+  Temp: { units: "°C", min: 45, max: 110 },
+  Pressure: { units: "kPa", min: 100, max: 600 },
+  Frequency: { units: "Hz", min: 49, max: 51 },
+  Level: { units: "m", min: 2, max: 12 },
+  Capacity: { units: "%", min: 80, max: 100 },
+};
+
+// Helper function to get a profile match based on the symbol name
+const getProfile = (name: string) => {
+  const match = Object.keys(METRIC_PROFILES).find((key) => name.includes(key));
+  return match ? METRIC_PROFILES[match] : { units: "mV", min: 10, max: 150 };
+};
+
+// The list of all your 62 alphabetically sorted symbol names
+const SYMBOL_NAMES = [
+  "AirFlowVelocity", "AmbientHumidity", "AnalogDeadband", "BearingVibrationA", "BearingVibrationB",
+  "BinaryDebounce", "BoilerWaterLevel", "BrakePadWearIndicator", "BusVoltagePhaseA", "BusVoltagePhaseB",
+  "BusVoltagePhaseC", "CabinInternalTemp", "ChilledWaterFlow", "CircuitBreakerStatus", "CommTimeout",
+  "CompressorDischargePres", "CondenserFanSpeed", "ConveyorBeltSpeed", "CoolantFluidLevel", "CrankcaseOilTemp",
+  "DiffPressureFilter", "EmergencyStopLoop", "ExhaustGasOxygen", "ExhaustTemp", "FeederCurrentPhaseA",
+  "FeederCurrentPhaseB", "FeederCurrentPhaseC", "FuelControlValvePos", "GearboxOilPressure", "GeneratorFrequency",
+  "HydraulicFluidTemp", "InverterCoreTemp", "IsolationValveState", "LeakDetectionSensor", "LubeOilSumpLevel",
+  "MainPumpPressure", "MotorStatorTempA", "MotorStatorTempB", "MotorStatorTempC", "OilWaterSeparator",
+  "OverloadTripCounter", "PanelDoorInterlock", "PneumaticSupplyPres", "PowerFactorTotal", "ProcessFluidDensity",
+  "PumpDischargeValve", "ReactivePowerKVAR", "RefrigerantSuctionPres", "RotorShaftSpeedRPM", "SafetyValveRelief",
+  "SilicaAnalyzerValue", "SteamHeaderTemp", "SurgeArresterLeakage", "SystemTimer", "TankLevelVolume",
+  "TransformerGasLevel", "TurbineVibrationX", "TurbineVibrationY", "UpsBatteryCapacity", "VacuumSuctionLevel",
+  "WaterTurbidityValue"
+];
+
+/**
+ * Generates the full dictionary state tracking your 62 telemetry endpoints.
+ * You can call this inside your mock engine to produce the entire live state payload!
+ */
+export const generateLiveMetricsDictionary = (): Record<string, any> => {
+  const dictionary: Record<string, any> = {};
+
+  SYMBOL_NAMES.forEach((name) => {
+    const profile = getProfile(name);
+
+    // Simulate real values oscillating inside realistic ranges
+    const randomValue = Math.floor(Math.random() * (profile.max - profile.min + 1)) + profile.min;
+
+    // Randomly flag a field as high/low 10% of the time to test your UI alert badges
+    let systemRange = "normal";
+    if (randomValue > profile.max - (profile.max * 0.1)) systemRange = "high";
+    if (randomValue < profile.min + (profile.min * 0.1)) systemRange = "low";
+
+    dictionary[name] = {
+      stVal: randomValue,
+      q: {
+        validity: Math.random() > 0.95 ? "questionable" : "good", // Mock rare network quality disruptions
+        source: "process",
+        test: false,
+        operatorBlocked: false,
+        detailQual: {
+          overflow: false,
+          outOfRange: systemRange !== "normal",
+          badReference: false,
+          oscillatory: false,
+          failure: false,
+          oldData: false,
+          inconsistent: false,
+          inaccurate: false
+        }
+      },
+      t: {
+        value: new Date().toISOString(), // Yields strict runtime timestamps for your table updates
+        leapSecondsKnown: true,
+        clockFailure: false,
+        clockNotSynchronized: false,
+        timeAccuracy: 10,
+        source: "ntp"
+      },
+      range: systemRange,
+      units: profile.units,
+      multiplier: 1.0,
+      d: `${name} runtime telemetry variable monitor.`
+    };
+  });
+
+  return dictionary;
+};

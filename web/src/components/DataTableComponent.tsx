@@ -27,7 +27,7 @@ interface DataTableProps<TData, TValue> {
     data: TData[]
     onRowClick?: () => void;
     startedPolling: boolean;
-    startPolling: (startedPolling: boolean) => void;
+    startPolling: (on: boolean) => void;
 }
 
 export function DataTableComponent<TData, TValue>({
@@ -83,10 +83,9 @@ export function DataTableComponent<TData, TValue>({
                     className="max-w-sm"
                 />
                 <div className="flex flex-row items-center gap-2">
-                    <Button onClick={() => {
-                        startPolling(!startedPolling)
-                        console.log("Polling started: ", !startedPolling)
-                    }}>{startedPolling ? "Stop Polling" : "Start Polling"}</Button>
+                    <Button onClick={() => startPolling(!startedPolling)}>
+                        {startedPolling ? "Stop Polling" : "Start Polling"}
+                    </Button>
                     <p>2s interval</p>
                 </div>
             </div>

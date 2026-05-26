@@ -2,6 +2,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "./ui/button";
+import { useTheme, type Theme } from "@/hooks/useTheme";
 
 export default function UserMenu() {
     return (
@@ -32,19 +33,24 @@ export default function UserMenu() {
 }
 
 export function ThemeSelector() {
+    const { theme, setTheme } = useTheme();
     return (
-        <RadioGroup defaultValue="auto" className="w-fit flex flex-row">
+        <RadioGroup
+            value={theme}
+            onValueChange={(v) => setTheme(v as Theme)}
+            className="w-fit flex flex-row"
+        >
             <div className="flex items-center gap-3">
-                <RadioGroupItem value="auto" id="r1" />
-                <Label htmlFor="r1">Auto</Label>
+                <RadioGroupItem value="auto" id="theme-auto" />
+                <Label htmlFor="theme-auto">Auto</Label>
             </div>
             <div className="flex items-center gap-3">
-                <RadioGroupItem value="light" id="r2" />
-                <Label htmlFor="r2">Light</Label>
+                <RadioGroupItem value="light" id="theme-light" />
+                <Label htmlFor="theme-light">Light</Label>
             </div>
             <div className="flex items-center gap-3">
-                <RadioGroupItem value="dark" id="r3" />
-                <Label htmlFor="r3">Dark</Label>
+                <RadioGroupItem value="dark" id="theme-dark" />
+                <Label htmlFor="theme-dark">Dark</Label>
             </div>
         </RadioGroup>
     )

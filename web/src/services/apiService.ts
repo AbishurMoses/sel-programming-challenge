@@ -1,4 +1,4 @@
-import type { ApiError, AuthCredentials, AuthTokenResponse, Symbol, rawApiSymbol } from '@/types/api';
+import type { ApiError, AuthCredentials, AuthTokenResponse, Symbol, SymbolValue, rawApiSymbol } from '@/types/api';
 import { httpClient } from './httpClient';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
@@ -155,7 +155,7 @@ export class SELApiService {
     async getSymbols(): Promise<Symbol[]> {
         try {
             const { data } = await this.http.get<rawApiSymbol[]>('/logic-engine/symbols');
-            return data.map((s) => this.mapSymbol(s));
+            return data.map((s) => this.mapSymbol(s)).filter((s) => s.type === 'INS');
         } catch (error) {
             this.handleError(error);
         }
@@ -167,6 +167,21 @@ export class SELApiService {
             type: raw.Type,
             description: raw.Description,
         };
+    }
+
+    async getSymbolValue(symbolName: string): Promise<SymbolValue> {
+        try {
+            const { data } = await this.http.get(`/logic-engine/symbols/${symbolName}`);
+            return {
+                symbolName,
+                stVal: data.stVal,
+                t: new Date(data.t.value).toLocaleTimeString(),
+                lastUpdated: new Date(),
+                rawData: data,
+            };
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 }
 
