@@ -85,7 +85,11 @@ export class SELApiService {
 
     private handleError(error: unknown): never {
         if (axios.isAxiosError(error)) {
-            if (error.code === 'ECONNABORTED') {
+            const isTimeout =
+                error.code === 'ECONNABORTED' ||
+                error.code === 'ETIMEDOUT' ||
+                /timeout/i.test(error.message ?? '');
+            if (isTimeout) {
                 throw {
                     message: 'Request timed out',
                     timestamp: new Date(),
