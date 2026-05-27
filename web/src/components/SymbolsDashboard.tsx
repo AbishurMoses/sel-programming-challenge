@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "./ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { Card } from "./ui/card";
-import useSymbolPolling from "@/hooks/useSymbolPolling";
+import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 
 interface SymbolsDashboardProps {
     onSymbolClick: () => void;
@@ -19,7 +19,7 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
         pollingState,
         startPolling,
         stopPolling,
-    } = useSymbolPolling(); 
+    } = useSymbolPollingContext();
 
     const rows: SymbolRow[] = symbols.map((s) => {
         const value = symbolValues.get(s.name);
@@ -41,7 +41,7 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
                 columns={columns}
                 data={rows}
                 onRowClick={onSymbolClick}
-                startedPolling={pollingState.isPolling}
+                startedPolling={pollingState}
                 startPolling={(on) => (on ? startPolling() : stopPolling())}
             />
         </Card>

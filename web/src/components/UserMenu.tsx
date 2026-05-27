@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "./ui/button";
 import { useTheme, type Theme } from "@/hooks/useTheme";
+import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 
 export default function UserMenu() {
     return (
@@ -26,7 +27,7 @@ export default function UserMenu() {
             </CardContent>
             <CardAction className="flex justify-center w-full pt-6 gap-2">
                 <Button >Save Changes</Button>
-                 <Button >Cancel Changes</Button>
+                <Button >Cancel Changes</Button>
             </CardAction>
         </Card>
     )
@@ -57,8 +58,12 @@ export function ThemeSelector() {
 }
 
 export function PollingInterval() {
+    const { pollingState, setPollingInterval } = useSymbolPollingContext();
     return (
-        <RadioGroup defaultValue="5" className="w-fit flex flex-row">
+        <RadioGroup
+            value={(pollingState.interval / 1000).toString()}
+            onValueChange={(v) => setPollingInterval(Number(v) * 1000)}
+            className="w-fit flex flex-row">
             <div className="flex items-center gap-3">
                 <RadioGroupItem value="1" id="r1" />
                 <Label htmlFor="r1">1s</Label>

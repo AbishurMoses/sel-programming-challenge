@@ -7,7 +7,7 @@ import SymbolsDashboard from './components/SymbolsDashboard'
 import { Dialog, DialogContent } from './components/ui/dialog'
 import { TooltipProvider } from './components/ui/tooltip'
 import { apiService } from './services/apiService'
-
+import { SymbolPollingProvider } from './context/SymbolPollingContext'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isTokenValid())
@@ -25,18 +25,19 @@ function App() {
           </div>
         ) : (
           <div className="flex flex-col h-screen">
-            <Navbar />
-            <main className="flex-1 flex items-center justify-center w-full px-4">
+            <SymbolPollingProvider>
+              <Navbar />
+              <main className="flex-1 flex items-center justify-center w-full px-4">
 
-              <SymbolsDashboard onSymbolClick={() => setIsDialogOpen(true)} />
+                <SymbolsDashboard onSymbolClick={() => setIsDialogOpen(true)} />
 
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-3xl">
-                  <SymbolDetailView />
-                </DialogContent>
-              </Dialog>
-
-            </main>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogContent className="sm:max-w-3xl">
+                    <SymbolDetailView />
+                  </DialogContent>
+                </Dialog>
+              </main>
+            </SymbolPollingProvider>
           </div>
         )}
       </div>
