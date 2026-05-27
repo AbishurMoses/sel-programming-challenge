@@ -85,8 +85,12 @@ export function PollingInterval() {
 }
 
 export function AutoStartPolling() {
+    const { pollingState, startPolling, stopPolling } = useSymbolPollingContext();
     return (
-        <RadioGroup defaultValue="off" className="w-fit flex flex-row">
+        <RadioGroup
+            value={pollingState.isPolling ? "on" : "off"}
+            onValueChange={(v) => v === "on" ? startPolling() : stopPolling()}
+            className="w-fit flex flex-row">
             <div className="flex items-center gap-3">
                 <RadioGroupItem value="on" id="r1" />
                 <Label htmlFor="r1">On</Label>
@@ -98,7 +102,3 @@ export function AutoStartPolling() {
         </RadioGroup>
     )
 }
-
-// Theme selector: Auto / Light / Dark
-// Polling interval: 1s / 2s / 5s / 10s
-// Auto-start polling: On / Off
