@@ -4,6 +4,9 @@ import { Label } from "./ui/label";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
 import { CartesianGrid, Line, XAxis, LineChart } from "recharts";
 import { Badge } from "./ui/badge";
+import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
+import type { SymbolHistoryPoint } from "@/types/api";
+import { useEffect, useRef } from "react";
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -76,14 +79,16 @@ function getQualityBadge(quality: string) {
     }
 }
 
-export default function SymbolDetailView() {
-    const quality = "questionable"
-    const range = "normal"
+export default function SymbolDetailView({ name }: { name: string }) {
+    const { symbolHistory, symbolValues, symbols } = useSymbolPollingContext();
+    const history = symbolHistory.get(name)
+    const value = symbolValues.get(name)
+    const symbol = symbols.find(s => s.name === name)
     return (
         <>
             <DialogHeader>
-                <DialogTitle className="text-xl">AnalogDeadband</DialogTitle>
-                <DialogDescription>Analog input deadband threshold</DialogDescription>
+                <DialogTitle className="text-xl">{symbol?.name}</DialogTitle>
+                <DialogDescription>{symbol?.description}</DialogDescription>
             </DialogHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -92,12 +97,12 @@ export default function SymbolDetailView() {
                         <CardTitle className="text-base">Current State</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-2">
-                        <DetailRow label="Current Value" value={'42 mV'} />
-                        <DetailRow label="Status" value={getRangeBadge(range)} />
+                        <DetailRow label="Current Value" value={history?.dataPoints[history?.dataPoints.length - 1]?.value} />
+                        <DetailRow label="Status" value={getRangeBadge(value?.rawData?.range as string)} />
                         <DetailRow label="Quality" value={
-                            <div> {getQualityBadge(quality)}</div>
+                            <div> {getQualityBadge(value?.rawData?.q?.validity as string)}</div>
                         } />
-                        <DetailRow label="Last Updated" value="2024-12-03 14:30:00 (2s ago)" />
+                        <DetailRow label="Last Updated" value={(value?.lastUpdated)?.toLocaleString()} />
                     </CardContent>
                 </Card>
 
@@ -106,10 +111,9 @@ export default function SymbolDetailView() {
                         <CardTitle className="text-base">Symbol Info</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-2">
-                        <DetailRow label="Type" value="INS (16-bit Integer)" />
-                        <DetailRow label="Units" value="mV" />
-                        <DetailRow label="Multiplier" value="1.0" />
-                        <DetailRow label="Description" value="Analog input deadband threshold" />
+                        <DetailRow label="Type" value={symbol?.type} />
+                        <DetailRow label="Units" value={value?.rawData?.units as string} />
+                        <DetailRow label="Multiplier" value={value?.rawData?.multiplier as string} />
                     </CardContent>
                 </Card>
 
@@ -118,20 +122,25 @@ export default function SymbolDetailView() {
                         <CardTitle className="text-base">Value History — last 5 min</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <SymbolDetailViewChart />
+                        <SymbolDetailViewChart historyPoints={history?.dataPoints} />
                     </CardContent>
                 </Card>
 
-                <Card className="md:col-span-2"> 
+                <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle className="text-base">Quality Details</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-y-1 text-sm">
-                            <p>Valid Data</p>
-                            <p>Process source</p>
-                            <p>Not blocked</p>
-                            <p>Clock synchronized</p>
+                        <div className="max-h-[60px] overflow-y-auto pr-2">
+                            <div className="grid grid-cols-2 gap-y-1 text-sm">
+                                {value?.rawData?.q?.detailQual &&
+                                    Object.entries(value.rawData.q.detailQual).map(([flag, active]) => (
+                                        <p key={flag} className={active ? "text-destructive" : "text-muted-foreground"}>
+                                            {flag}: {String(active)}
+                                        </p>
+                                    ))
+                                }
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -140,13 +149,16 @@ export default function SymbolDetailView() {
     );
 }
 
-export function SymbolDetailViewChart() {
-    const chartData = [
-        { time: "14:25", value: 15 },
-        { time: "14:27", value: 24 },
-        { time: "14:29", value: 38 },
-        { time: "14:30", value: 19 },
-    ];
+export function SymbolDetailViewChart({ historyPoints }: { historyPoints: SymbolHistoryPoint[] }) {
+
+    // X-axis of the graph will adjust to the time.
+    // Need to convert the time to milliseconds
+    // it will then automatically set it where it needs to be
+    const chartData = historyPoints?.map((point: SymbolHistoryPoint) => ({
+        value: point.value,
+        time: point.timestamp.getTime(),
+    })) ?? [];
+
 
     const chartConfig = {
         value: {
@@ -155,8 +167,26 @@ export function SymbolDetailViewChart() {
         },
     } satisfies ChartConfig;
 
+    const SCROLL_THRESHOLD = 15;
+    const PX_PER_POINT = 40;
+    const shouldScroll = chartData.length > SCROLL_THRESHOLD;
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, [chartData.length]);
+
+    console.log(chartData.length)
+
     return (
-        <ChartContainer config={chartConfig} className="h-48 w-full">
+        <div ref={scrollRef} className="overflow-x-auto">
+        <ChartContainer
+            config={chartConfig}
+            className={shouldScroll ? "h-48" : "h-48 w-full"}
+            style={shouldScroll ? { width: chartData.length * PX_PER_POINT } : undefined}
+        >
             <LineChart
                 accessibilityLayer
                 data={chartData}
@@ -167,12 +197,14 @@ export function SymbolDetailViewChart() {
                     dataKey="time"
                     tickLine={false}
                     axisLine={false}
-                    tickMargin={8}
                     interval={0}
                     padding={{ left: 16, right: 16 }}
+                    tickFormatter={(ms: number) =>
+                        new Date(ms).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })
+                    }
                 />
                 <ChartTooltip
-                    cursor={false}
+                    cursor={true}
                     content={<ChartTooltipContent hideLabel />}
                 />
                 <Line
@@ -184,5 +216,6 @@ export function SymbolDetailViewChart() {
                 />
             </LineChart>
         </ChartContainer>
+        </div>
     );
 }

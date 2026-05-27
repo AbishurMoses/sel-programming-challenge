@@ -11,7 +11,7 @@ import { SymbolPollingProvider } from './context/SymbolPollingContext'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isTokenValid())
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   apiService.onUnauthorized = () => {
     window.location.reload();
@@ -29,11 +29,11 @@ function App() {
               <Navbar />
               <main className="flex-1 flex items-center justify-center w-full px-4">
 
-                <SymbolsDashboard onSymbolClick={() => setIsDialogOpen(true)} />
+                <SymbolsDashboard onSymbolClick={(name) => setSelectedSymbol(name)} />
 
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={!!selectedSymbol} onOpenChange={(open) => !open && setSelectedSymbol(null)}>
                   <DialogContent className="sm:max-w-3xl">
-                    <SymbolDetailView />
+                    {selectedSymbol && <SymbolDetailView name={selectedSymbol} />}
                   </DialogContent>
                 </Dialog>
               </main>

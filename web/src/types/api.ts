@@ -18,17 +18,18 @@ export interface AuthErrorResponse {
   detail: string;
 }
 
+// Symbols API
+export interface rawApiSymbol {
+  Name: string; 
+  Type: string; 
+  Description?: string;  
+}
+
 // Symbols
 export interface Symbol {
   name: string;  // Mapped from API's PascalCase "Name" field
   type: string;  // Mapped from API's PascalCase "Type" field
   description?: string;  // Mapped from API's PascalCase "Description" field
-}
-
-export interface rawApiSymbol {
-  Name: string; 
-  Type: string; 
-  Description?: string;  
 }
 
 export interface SymbolValue {

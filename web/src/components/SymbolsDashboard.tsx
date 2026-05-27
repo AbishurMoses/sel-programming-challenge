@@ -7,7 +7,7 @@ import { Card } from "./ui/card";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 
 interface SymbolsDashboardProps {
-    onSymbolClick: () => void;
+    onSymbolClick: (name: string) => void;
 }
 
 type SymbolRow = SymbolData & Partial<SymbolValue> & { symbolName: string };
@@ -33,14 +33,12 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
         };
     });
 
-    console.log("Rendering SymbolsDashboard with rows:", rows);
-
     return (
         <Card className="w-full px-4">
             <DataTableComponent
                 columns={columns}
                 data={rows}
-                onRowClick={onSymbolClick}
+                onRowClick={(row) => onSymbolClick(row.symbolName)}
                 startedPolling={pollingState}
                 startPolling={(on) => (on ? startPolling() : stopPolling())}
             />
@@ -105,11 +103,32 @@ export const columns: ColumnDef<SymbolRow>[] = [
             const lastUpdated = row.original.lastUpdated;
             if (!lastUpdated) return <div>—</div>;
             const secondsAgo = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-            const isStale = secondsAgo >= 30;
             return (
-                <div className={isStale ? "text-destructive" : undefined}>
+                <div >
                     {secondsAgo}s ago
                 </div>
+            );
+        },
+    },
+    {
+        accessorKey: "status",
+        header: () => (
+            <Button variant="ghost">
+                Status
+            </Button>
+        ),
+        cell: ({ row }) => {
+            const lastUpdated = row.original.lastUpdated;
+            if (!lastUpdated) return <div>—</div>;
+            const secondsAgo = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+            const isStale = secondsAgo >= 30;
+            const isInactive = secondsAgo >= 60;
+            return isInactive ? (
+                <p>Inactive</p>
+            ) : isStale ? (
+                <p>Stale</p>
+            ) : (
+                <p>Active</p>
             );
         },
     },

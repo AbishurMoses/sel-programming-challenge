@@ -4,6 +4,8 @@ import { apiService } from "@/services/apiService";
 
 const MAX_HISTORY_POINTS = 50
 const MAX_SYMBOLS = 50
+const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
 export default function useSymbolPolling() {
     const [symbols, setSymbols] = useState<SymbolData[]>([]);
     const [symbolValues, setSymbolValues] = useState<Map<string, SymbolValue>>(new Map());
@@ -57,6 +59,12 @@ export default function useSymbolPolling() {
                 };
                 const existing = receivedHistory.get(name) ?? { symbolName: name, dataPoints: [], maxPoints: MAX_HISTORY_POINTS };
                 const dataPoints = [...existing.dataPoints, point].slice(-MAX_HISTORY_POINTS); // extract the last 50
+                while (
+                    dataPoints.length > 1 &&
+                    dataPoints[dataPoints.length - 1].timestamp.getTime() - dataPoints[0].timestamp.getTime() > HISTORY_WINDOW_MS
+                ) {
+                    dataPoints.shift();
+                }
                 receivedHistory.set(name, { ...existing, dataPoints });
             });
             return receivedHistory;

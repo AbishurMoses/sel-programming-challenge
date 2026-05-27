@@ -26,7 +26,7 @@ import type { PollingState } from "@/types/api"
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
-    onRowClick?: () => void;
+    onRowClick?: (row: TData) => void;
     startedPolling: PollingState;
     startPolling: (on: boolean) => void;
 }
@@ -53,6 +53,7 @@ export function DataTableComponent<TData, TValue>({
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
+        autoResetPageIndex: false,
         initialState: {
             pagination: {
                 pageSize: 5,
@@ -116,7 +117,7 @@ export function DataTableComponent<TData, TValue>({
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    onClick={() => onRowClick?.()}
+                                    onClick={() => onRowClick?.(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
