@@ -119,7 +119,7 @@ export default function SymbolDetailView({ name }: { name: string }) {
 
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle className="text-base">Value History — last 5 min</CardTitle>
+                        <CardTitle className="text-base">Value History</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <SymbolDetailViewChart historyPoints={history?.dataPoints} />

@@ -27,6 +27,10 @@ export default function useSymbolPolling() {
 
     const pollOnce = useCallback(async () => {
         const names = symbolsRef.current.map((s) => s.name);
+        // Using Promise.allSettled even though doc says use Promise.all
+        // .all would fail the entire batch if any request fails.
+        // I'm assuming the docs wasn't asking me to use the exact method .all but to 
+        // handle the batch as a single unit
         const results = await Promise.allSettled(
             names.map((name) => apiService.getSymbolValue(name)),
         );
@@ -103,6 +107,7 @@ export default function useSymbolPolling() {
 
     useEffect(() => {
         if (!pollingState.isPolling) return;
+        
         pollOnce();
         intervalRef.current = window.setInterval(pollOnce, pollingState.interval);
         return () => {

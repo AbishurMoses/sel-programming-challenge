@@ -21,7 +21,9 @@ import { Button } from "./ui/button"
 import { useState } from "react"
 import { Input } from "./ui/input"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import type { PollingState } from "@/types/api"
+import type { PollingState, SymbolValue } from "@/types/api"
+import ExportCSV from "./CSVDownload"
+import { statusGenerator } from "@/lib/utils"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -140,47 +142,57 @@ export function DataTableComponent<TData, TValue>({
                 <div className="flex  items-center justify-center text-sm font-medium">
                     Showing {toResult} of {totalRowsCount} symbols
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="hidden size-8 lg:flex"
-                        onClick={() => table.setPageIndex(0)}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        <span className="sr-only">Go to first page</span>
-                        <ChevronsLeft />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        <span className="sr-only">Go to previous page</span>
-                        <ChevronLeft />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        <span className="sr-only">Go to next page</span>
-                        <ChevronRight />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="hidden size-8 lg:flex"
-                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        <span className="sr-only">Go to last page</span>
-                        <ChevronsRight />
-                    </Button>
+                <div className="flex items-center space-x-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="hidden size-8 lg:flex"
+                            onClick={() => table.setPageIndex(0)}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            <span className="sr-only">Go to first page</span>
+                            <ChevronsLeft />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            <span className="sr-only">Go to previous page</span>
+                            <ChevronLeft />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            <span className="sr-only">Go to next page</span>
+                            <ChevronRight />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="hidden size-8 lg:flex"
+                            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            <span className="sr-only">Go to last page</span>
+                            <ChevronsRight />
+                        </Button>
+                    </div>
+                    <ExportCSV data={
+                        data.map((row) => {
+                            const value = row as Partial<SymbolValue>;
+                            const status = statusGenerator(value.lastUpdated ?? new Date(0));
+                            return { ...value, status };
+                        }) as (Partial<SymbolValue> & { status: string })[]
+                    }
+                        fileName="symbols.csv" />
                 </div>
             </div>
         </div>

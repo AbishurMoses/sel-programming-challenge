@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { Card } from "./ui/card";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
+import { statusGenerator } from "@/lib/utils";
 
 interface SymbolsDashboardProps {
     onSymbolClick: (name: string) => void;
@@ -120,16 +121,9 @@ export const columns: ColumnDef<SymbolRow>[] = [
         cell: ({ row }) => {
             const lastUpdated = row.original.lastUpdated;
             if (!lastUpdated) return <div>—</div>;
-            const secondsAgo = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-            const isStale = secondsAgo >= 30;
-            const isInactive = secondsAgo >= 60;
-            return isInactive ? (
-                <p>Inactive</p>
-            ) : isStale ? (
-                <p>Stale</p>
-            ) : (
-                <p>Active</p>
-            );
+            return (
+                <p>{statusGenerator(lastUpdated)}</p>
+            )
         },
     },
 ];

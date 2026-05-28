@@ -133,4 +133,87 @@ describe('SELApiService', () => {
             service.authenticate({ serverUrl: BASE, username: 'u', password: 'p' }),
         ).rejects.toMatchObject({ message: 'Request timed out' });
     });
+
+    it('getSymbols maps PascalCase to camelCase and filters to INS only', async () => {
+        server.use(
+            http.get('*/logic-engine/symbols', () =>
+                HttpResponse.json([
+                    { Name: 'TempA', Type: 'INS', Description: 'Temperature A' },
+                    { Name: 'CounterB', Type: 'INT', Description: 'Counter B' },
+                    { Name: 'PressureC', Type: 'INS' },
+                ]),
+            ),
+        );
+
+        const { service } = makeService();
+        service.setToken('token-val', 3600);
+
+        const symbols = await service.getSymbols();
+
+        expect(symbols).toEqual([
+            { name: 'TempA', type: 'INS', description: 'Temperature A' },
+            { name: 'PressureC', type: 'INS', description: undefined },
+        ]);
+    });
+
+    it('getSymbols normalizes errors into ApiError', async () => {
+        server.use(
+            http.get('*/logic-engine/symbols', () =>
+                HttpResponse.json({ detail: 'Server exploded' }, { status: 500 }),
+            ),
+        );
+
+        const { service } = makeService();
+        service.setToken('token-val', 3600);
+
+        await expect(service.getSymbols()).rejects.toMatchObject({
+            message: 'Server exploded',
+            status: 500,
+        });
+    });
+
+    it('getSymbolValue maps response, formats time, and stamps lastUpdated', async () => {
+        const isoTimestamp = '2026-05-27T14:58:12.237Z';
+        server.use(
+            http.get('*/logic-engine/symbols/:name', ({ params }) => {
+                expect(params.name).toBe('AnalogDeadband');
+                return HttpResponse.json({
+                    stVal: 66,
+                    t: { value: isoTimestamp },
+                    range: 'normal',
+                    units: 'mV',
+                });
+            }),
+        );
+
+        const { service } = makeService();
+        service.setToken('token-val', 3600);
+
+        const before = Date.now();
+        const result = await service.getSymbolValue('AnalogDeadband');
+        const after = Date.now();
+
+        expect(result.symbolName).toBe('AnalogDeadband');
+        expect(result.stVal).toBe(66);
+        expect(result.t).toBe(new Date(isoTimestamp).toLocaleTimeString());
+        expect(result.lastUpdated.getTime()).toBeGreaterThanOrEqual(before);
+        expect(result.lastUpdated.getTime()).toBeLessThanOrEqual(after);
+        expect(result.rawData).toMatchObject({ stVal: 66, range: 'normal', units: 'mV' });
+    });
+
+    it('getSymbolValue normalizes errors into ApiError', async () => {
+        server.use(
+            http.get('*/logic-engine/symbols/:name', () =>
+                new HttpResponse(null, { status: 503 }),
+            ),
+        );
+
+        const { service } = makeService();
+        service.setToken('token-val', 3600);
+
+        await expect(service.getSymbolValue('AnalogDeadband')).rejects.toMatchObject({
+            message: 'Request failed (503)',
+            status: 503,
+        });
+    });
 });
