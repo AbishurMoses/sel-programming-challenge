@@ -6,6 +6,9 @@ import { ArrowUpDown } from "lucide-react";
 import { Card } from "./ui/card";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 import { statusGenerator } from "@/lib/utils";
+import TableSkeleton from "./skeletons/DataTableSkeleton";
+import ErrorDialog from "./ErrorDialog";
+import { useEffect, useState } from "react";
 
 interface SymbolsDashboardProps {
     onSymbolClick: (name: string) => void;
@@ -20,7 +23,23 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
         pollingState,
         startPolling,
         stopPolling,
+        loading,
+        error,
+        connectionStatus,
     } = useSymbolPollingContext();
+
+    const [connectErrorOpen, setConnectErrorOpen] = useState(false);
+    const [pollsErrorOpen, setPollsErrorOpen] = useState(false);
+
+    useEffect(() => {
+        if (!loading && symbols.length === 0 && connectionStatus.error) {
+            setConnectErrorOpen(true);
+        }
+    }, [loading, symbols.length, connectionStatus.error]);
+
+    useEffect(() => {
+        if (error?.message === "All polls failed") setPollsErrorOpen(true);
+    }, [error]);
 
     const rows: SymbolRow[] = symbols.map((s) => {
         const value = symbolValues.get(s.name);
@@ -34,17 +53,37 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
         };
     });
 
+    if (loading && rows.length === 0) {
+        return <TableSkeleton />
+    }
+
     return (
-        <Card className="w-full px-4">
-            <DataTableComponent
-                columns={columns}
-                data={rows}
-                onRowClick={(row) => onSymbolClick(row.symbolName)}
-                startedPolling={pollingState}
-                startPolling={(on) => (on ? startPolling() : stopPolling())}
+        <>
+            <Card className="w-full px-4">
+                <DataTableComponent
+                    columns={columns}
+                    data={rows}
+                    onRowClick={(row) => onSymbolClick(row.symbolName)}
+                    startedPolling={pollingState}
+                    startPolling={(on) => (on ? startPolling() : stopPolling())}
+                />
+            </Card>
+            <ErrorDialog
+                open={connectErrorOpen}
+                onClose={() => setConnectErrorOpen(false)}
+                title="Could not connect to the server"
+                message={connectionStatus.error ?? "The dashboard could not reach the SEL server."}
+                suggestion="Check your server URL and network connection, then sign in again."
             />
-        </Card>
-    );
+            <ErrorDialog
+                open={pollsErrorOpen}
+                onClose={() => setPollsErrorOpen(false)}
+                title="Lost connection to data feed"
+                message={error?.message ?? "All recent polls failed."}
+                suggestion="Polling will keep retrying. If this persists, check the server status."
+            />
+        </>
+    )
 }
 
 export const columns: ColumnDef<SymbolRow>[] = [

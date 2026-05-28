@@ -20,9 +20,9 @@ export interface AuthErrorResponse {
 
 // Symbols API
 export interface rawApiSymbol {
-  Name: string; 
-  Type: string; 
-  Description?: string;  
+  Name: string;
+  Type: string;
+  Description?: string;
 }
 
 // Symbols
@@ -71,4 +71,14 @@ export interface ApiError {
   status?: number;
   timestamp: Date;
   cancelled?: boolean;
+}
+
+// Helper types
+export type Theme = 'light' | 'dark' | 'auto';
+export type ResolvedTheme = 'light' | 'dark';
+
+export interface Settings {
+  theme: Theme;
+  pollingInterval: number;
+  autoStartPolling: boolean;
 }

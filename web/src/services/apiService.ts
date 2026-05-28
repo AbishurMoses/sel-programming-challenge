@@ -1,10 +1,8 @@
-import type { ApiError, AuthCredentials, AuthTokenResponse, Symbol, SymbolValue, rawApiSymbol } from '@/types/api';
+import type { ApiError, AuthCredentials, AuthTokenResponse, Symbol, SymbolValue, Theme, rawApiSymbol } from '@/types/api';
 import { httpClient } from './httpClient';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
-
-const TOKEN_KEY = 'sel.token';
-const EXPIRY_KEY = 'sel.tokenExpiry';
+import { storageService, STORAGE_KEYS } from './storageService';
 
 export class SELApiService {
     private token: string | null = null;
@@ -18,18 +16,58 @@ export class SELApiService {
         this.installInterceptors();
     }
 
+    getServerUrl(): string {
+        return this.http.defaults.baseURL ?? "—";
+    }
+
+    setSettings(settings: { theme: Theme; pollingInterval: number; autoStartPolling: boolean }): void {
+        storageService.set(STORAGE_KEYS.theme, settings.theme);
+        storageService.setNumber(STORAGE_KEYS.pollingInterval, settings.pollingInterval);
+        storageService.setBoolean(STORAGE_KEYS.autoStartPolling, settings.autoStartPolling);
+    }
+
+    getSettings(): { theme: Theme | null; pollingInterval: number | null; autoStartPolling: boolean } {
+        const theme = storageService.get(STORAGE_KEYS.theme) as Theme | null;
+        const pollingInterval = storageService.getNumber(STORAGE_KEYS.pollingInterval) ?? null;
+        const autoStartPolling = storageService.getBoolean(STORAGE_KEYS.autoStartPolling);
+        const parsed = {
+            theme: theme ?? "auto",
+            pollingInterval: pollingInterval ?? 2000,
+            autoStartPolling: autoStartPolling ?? false,
+        }
+        return {
+            theme: parsed.theme ?? "auto",
+            pollingInterval: parsed.pollingInterval ?? 2000,
+            autoStartPolling: parsed.autoStartPolling ?? false,
+        };
+    }
+
+    setCredentials(username: string, password: string): void {
+        storageService.set(STORAGE_KEYS.username, username);
+        storageService.set(STORAGE_KEYS.password, password);
+    }
+
+    getCredentials(): { username: string; password: string } | null {
+        const username = storageService.get(STORAGE_KEYS.username);
+        const password = storageService.get(STORAGE_KEYS.password);
+        if (username && password) {
+            return { username, password };
+        }
+        return null;
+    }
+
     setToken(token: string, expiresInSeconds: number): void {
         this.token = token;
         this.tokenExpiry = Date.now() + expiresInSeconds * 1000;
-        localStorage.setItem(TOKEN_KEY, token);
-        localStorage.setItem(EXPIRY_KEY, String(this.tokenExpiry));
+        storageService.set(STORAGE_KEYS.token, token);
+        storageService.setNumber(STORAGE_KEYS.tokenExpiry, this.tokenExpiry);
     }
 
     clearToken(): void {
         this.token = null;
         this.tokenExpiry = null;
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(EXPIRY_KEY);
+        storageService.remove(STORAGE_KEYS.token);
+        storageService.remove(STORAGE_KEYS.tokenExpiry);
     }
 
     isTokenValid(): boolean {
@@ -44,18 +82,17 @@ export class SELApiService {
     }
 
     private hydrateFromStorage(): void {
-        const storedToken = localStorage.getItem(TOKEN_KEY);
-        const storedExpiry = localStorage.getItem(EXPIRY_KEY);
-        if (!storedToken || !storedExpiry) return;
+        const storedToken = storageService.get(STORAGE_KEYS.token);
+        const storedExpiry = storageService.getNumber(STORAGE_KEYS.tokenExpiry);
+        if (!storedToken || storedExpiry === null) return;
 
-        const expiry = Number(storedExpiry);
-        if (Number.isNaN(expiry) || Date.now() >= expiry) {
+        if (Date.now() >= storedExpiry) {
             this.clearToken();
             return;
         }
 
         this.token = storedToken;
-        this.tokenExpiry = expiry;
+        this.tokenExpiry = storedExpiry;
     }
 
     private installInterceptors(): void {

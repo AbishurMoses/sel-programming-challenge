@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-
-export type Theme = 'light' | 'dark' | 'auto';
-export type ResolvedTheme = 'light' | 'dark';
-
-const STORAGE_KEY = 'sel.theme';
+import { apiService } from '@/services/apiService';
+import type { ResolvedTheme, Theme } from '@/types/api';
 
 function systemPrefersDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -15,7 +12,7 @@ function resolve(theme: Theme): ResolvedTheme {
 }
 
 export function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = apiService.getSettings().theme;
   if (stored === 'light' || stored === 'dark' || stored === 'auto') return stored;
   return 'auto';
 }
@@ -29,8 +26,6 @@ export function useTheme() {
 
   useEffect(() => {
     applyTheme(theme);
-    localStorage.setItem(STORAGE_KEY, theme);
-
     if (theme !== 'auto') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => applyTheme('auto');

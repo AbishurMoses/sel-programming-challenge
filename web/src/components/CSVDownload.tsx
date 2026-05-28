@@ -1,8 +1,13 @@
 // https://dev.to/graciesharma/implementing-csv-data-export-in-react-without-external-libraries-3030
 import { Button } from './ui/button';
 import type { SymbolValue } from '@/types/api';
+import ConfirmDialog from './ConfirmDialog';
+import { useState } from 'react';
 
 const ExportCSV = ({ data, fileName }: { data: Partial<SymbolValue> & { status: string }[]; fileName: string }) => {
+    const message = "Do you want to export this data to CSV?";
+    const [displayConfirmation, setDisplayConfirmation] = useState(false);
+
     const downloadCSV = () => {
         // Convert the data array into a CSV string
         const csvString = [
@@ -20,13 +25,23 @@ const ExportCSV = ({ data, fileName }: { data: Partial<SymbolValue> & { status: 
         const link = document.createElement('a');
         link.href = url;
         link.download = fileName || 'download.csv';
-        document.body.appendChild(link);
+        document.body.appendChild(link); downloadCSV
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+
+        setDisplayConfirmation(false);
     };
 
-    return <Button onClick={downloadCSV}>Export CSV</Button>;
+    return (
+        <>
+            <Button onClick={() => {
+                setDisplayConfirmation((prev) => !prev);
+            }}>Export CSV</Button>
+            {
+                displayConfirmation && <ConfirmDialog message={message} onConfirm={downloadCSV} onCancel={() => setDisplayConfirmation(false)} />
+            }
+        </>)
 };
 
 export default ExportCSV;

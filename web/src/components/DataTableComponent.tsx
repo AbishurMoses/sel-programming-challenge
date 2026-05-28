@@ -17,13 +17,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Button } from "./ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "./ui/input"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import type { PollingState, SymbolValue } from "@/types/api"
 import ExportCSV from "./CSVDownload"
 import { statusGenerator } from "@/lib/utils"
+import { Field, FieldLabel } from "./ui/field"
+import { toast } from "sonner"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -45,6 +55,7 @@ export function DataTableComponent<TData, TValue>({
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
         []
     )
+    const [tableSize, setTableSize] = useState(10)
 
     const table = useReactTable({
         data,
@@ -58,7 +69,7 @@ export function DataTableComponent<TData, TValue>({
         autoResetPageIndex: false,
         initialState: {
             pagination: {
-                pageSize: 5,
+                pageSize: tableSize,
             },
         },
         state: {
@@ -67,6 +78,9 @@ export function DataTableComponent<TData, TValue>({
         },
     })
 
+    useEffect(() => {
+        table.setPageSize(tableSize);
+    }, [tableSize, table])
 
     const pageIndex = table.getState().pagination.pageIndex;
     const pageSize = table.getState().pagination.pageSize;
@@ -78,16 +92,45 @@ export function DataTableComponent<TData, TValue>({
     return (
         <div>
             <div className="flex items-center justify-between py-4">
-                <Input
-                    placeholder="Search symbols..."
-                    value={(table.getColumn("symbolName")?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                        table.getColumn("symbolName")?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
+                <div className="flex items-center gap-2">
+                    <Field orientation="horizontal" className="w-fit">
+                        <FieldLabel htmlFor="select-rows-per-page" className="whitespace-nowrap">
+                            Rows per page
+                        </FieldLabel>
+                        <Select
+                            value={tableSize.toString()}
+                            onValueChange={(value: string) => setTableSize(Number(value))}>
+                            <SelectTrigger className="w-20" id="select-rows-per-page">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                                <SelectGroup>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="25">25</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                    <Input
+                        placeholder="Search symbols..."
+                        value={(table.getColumn("symbolName")?.getFilterValue() as string) ?? ""}
+                        onChange={(event) =>
+                            table.getColumn("symbolName")?.setFilterValue(event.target.value)
+                        }
+                        className="max-w-sm"
+                    />
+                </div>
                 <div className="flex flex-row items-center gap-2">
-                    <Button onClick={() => startPolling(!startedPolling.isPolling)}>
+                    <Button onClick={() => {
+                        startPolling(!startedPolling.isPolling)
+                        toast(`${!startedPolling.isPolling ? `Started polling at ${startedPolling.interval / 1000}s intervals` : 'Stopped Polling'} `, {
+                            action: {
+                                label: "X",
+                                onClick: () => { },
+                            },
+                        })
+                    }}>
                         {startedPolling.isPolling ? "Stop Polling" : "Start Polling"}
                     </Button>
                     <p>{startedPolling.interval / 1000}s interval</p>
@@ -195,6 +238,6 @@ export function DataTableComponent<TData, TValue>({
                         fileName="symbols.csv" />
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

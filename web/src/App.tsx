@@ -8,6 +8,9 @@ import { Dialog, DialogContent } from './components/ui/dialog'
 import { TooltipProvider } from './components/ui/tooltip'
 import { apiService } from './services/apiService'
 import { SymbolPollingProvider } from './context/SymbolPollingContext'
+import UserMenu from './components/UserMenu'
+import ConnectionStatus from './components/ConnectionStatus'
+import { Toaster } from './components/ui/sonner'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isTokenValid())
@@ -27,12 +30,17 @@ function App() {
           <div className="flex flex-col h-screen">
             <SymbolPollingProvider>
               <Navbar />
-              <main className="flex-1 flex items-center justify-center w-full px-4">
-
-                <SymbolsDashboard onSymbolClick={(name) => setSelectedSymbol(name)} />
+              <main className="flex-1 flex flex-col min-[1060px]:flex-row gap-4 w-full px-4 pt-4">
+                <aside className="flex flex-col gap-4 w-full min-[1060px]:w-80 min-[1060px]:shrink-0">
+                  <ConnectionStatus />
+                  <UserMenu />
+                </aside>
+                <div className="flex-1 min-w-0">
+                  <SymbolsDashboard onSymbolClick={(name) => setSelectedSymbol(name)} />
+                </div>
 
                 <Dialog open={!!selectedSymbol} onOpenChange={(open) => !open && setSelectedSymbol(null)}>
-                  <DialogContent className="sm:max-w-3xl">
+                  <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     {selectedSymbol && <SymbolDetailView name={selectedSymbol} />}
                   </DialogContent>
                 </Dialog>
@@ -41,6 +49,7 @@ function App() {
           </div>
         )}
       </div>
+      <Toaster />
     </TooltipProvider>
   )
 }

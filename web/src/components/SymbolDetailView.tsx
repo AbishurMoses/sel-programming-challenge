@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "./ui/label";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
 import { CartesianGrid, Line, XAxis, LineChart } from "recharts";
-import { Badge } from "./ui/badge";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 import type { SymbolHistoryPoint } from "@/types/api";
 import { useEffect, useRef } from "react";
+import { getQualityBadge, getRangeBadge } from "@/lib/badges";
+import { Activity } from "lucide-react";
+import { Button } from "./ui/button";
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -17,73 +19,39 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
     );
 }
 
-function getRangeBadge(range: string) {
-    switch (range) {
-        case "normal":
-            return (
-                <Badge className="bg-green-500 text-white">
-                    Normal Range
-                </Badge>
-            );
-        case "high":
-            return (
-                <Badge className="bg-yellow-500 text-white">
-                    High Range
-                </Badge>
-            );
-        case "low":
-            return (
-                <Badge className="bg-amber-500 text-white">
-                    Low Range
-                </Badge>
-            );
-        case "high-high":
-            return (
-                <Badge className="bg-red-500 text-white">
-                    Very High Range
-                </Badge>
-            );
-        case "low-low":
-            return (
-                <Badge className="bg-red-500 text-white">
-                    Very Low Range
-                </Badge>
-            );
-        default:
-            return <Badge>{range}</Badge>;
-    }
-}
-
-function getQualityBadge(quality: string) {
-    switch (quality) {
-        case "good":
-            return (
-                <Badge className="bg-green-500 text-white">
-                    Good
-                </Badge>
-            );
-        case "invalid":
-            return (
-                <Badge className="bg-red-500 text-white">
-                    Invalid
-                </Badge>
-            );
-        case "questionable":
-            return (
-                <Badge className="bg-yellow-500 text-white">
-                    Questionable
-                </Badge>
-            );
-        default:
-            return <Badge>{quality}</Badge>;
-    }
-}
-
 export default function SymbolDetailView({ name }: { name: string }) {
-    const { symbolHistory, symbolValues, symbols } = useSymbolPollingContext();
+    const { symbolHistory, symbolValues, symbols, pollingState, startPolling } = useSymbolPollingContext();
     const history = symbolHistory.get(name)
     const value = symbolValues.get(name)
     const symbol = symbols.find(s => s.name === name)
+
+    if (!value) {
+        return (
+            <>
+                <DialogHeader>
+                    <DialogTitle className="text-xl">{symbol?.name}</DialogTitle>
+                    <DialogDescription>{symbol?.description}</DialogDescription>
+                </DialogHeader>
+                <Card>
+                    <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+                        <Activity className="h-8 w-8" />
+                        <p className="text-sm font-medium">No live data yet</p>
+                        <p className="text-sm text-muted-foreground max-w-xs">
+                            {pollingState.isPolling
+                                ? "Waiting for the first poll to land…"
+                                : "Start polling to see live values for this symbol."}
+                        </p>
+                        {!pollingState.isPolling && (
+                            <Button onClick={() => startPolling()} className="mt-2">
+                                Start Polling
+                            </Button>
+                        )}
+                    </CardContent>
+                </Card>
+            </>
+        );
+    }
+
     return (
         <>
             <DialogHeader>
@@ -100,9 +68,15 @@ export default function SymbolDetailView({ name }: { name: string }) {
                         <DetailRow label="Current Value" value={history?.dataPoints[history?.dataPoints.length - 1]?.value} />
                         <DetailRow label="Status" value={getRangeBadge(value?.rawData?.range as string)} />
                         <DetailRow label="Quality" value={
-                            <div> {getQualityBadge(value?.rawData?.q?.validity as string)}</div>
+                            <div> {getQualityBadge((value?.rawData?.q as { validity?: string } | undefined)?.validity as string)}</div>
                         } />
-                        <DetailRow label="Last Updated" value={(value?.lastUpdated)?.toLocaleString()} />
+
+                        <DetailRow label="Last Updated"
+                            value={
+                                value?.lastUpdated
+                                    ? `${value.lastUpdated.toLocaleString()} (${Math.floor((Date.now() - value.lastUpdated.getTime()) / 1000)}s ago)`
+                                    : `${value?.lastUpdated.toLocaleString()}`
+                            } />
                     </CardContent>
                 </Card>
 
@@ -122,7 +96,7 @@ export default function SymbolDetailView({ name }: { name: string }) {
                         <CardTitle className="text-base">Value History</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <SymbolDetailViewChart historyPoints={history?.dataPoints} />
+                        <SymbolDetailViewChart historyPoints={history?.dataPoints ?? []} />
                     </CardContent>
                 </Card>
 
@@ -133,8 +107,8 @@ export default function SymbolDetailView({ name }: { name: string }) {
                     <CardContent>
                         <div className="max-h-[60px] overflow-y-auto pr-2">
                             <div className="grid grid-cols-2 gap-y-1 text-sm">
-                                {value?.rawData?.q?.detailQual &&
-                                    Object.entries(value.rawData.q.detailQual).map(([flag, active]) => (
+                                {(value?.rawData?.q as { detailQual?: Record<string, boolean> } | undefined)?.detailQual &&
+                                    Object.entries((value!.rawData!.q as { detailQual: Record<string, boolean> }).detailQual).map(([flag, active]) => (
                                         <p key={flag} className={active ? "text-destructive" : "text-muted-foreground"}>
                                             {flag}: {String(active)}
                                         </p>
@@ -178,44 +152,43 @@ export function SymbolDetailViewChart({ historyPoints }: { historyPoints: Symbol
         }
     }, [chartData.length]);
 
-    console.log(chartData.length)
 
     return (
         <div ref={scrollRef} className="overflow-x-auto">
-        <ChartContainer
-            config={chartConfig}
-            className={shouldScroll ? "h-48" : "h-48 w-full"}
-            style={shouldScroll ? { width: chartData.length * PX_PER_POINT } : undefined}
-        >
-            <LineChart
-                accessibilityLayer
-                data={chartData}
-                margin={{ left: 12, right: 12 }}
+            <ChartContainer
+                config={chartConfig}
+                className={shouldScroll ? "h-48" : "h-48 w-full"}
+                style={shouldScroll ? { width: chartData.length * PX_PER_POINT } : undefined}
             >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                    dataKey="time"
-                    tickLine={false}
-                    axisLine={false}
-                    interval={0}
-                    padding={{ left: 16, right: 16 }}
-                    tickFormatter={(ms: number) =>
-                        new Date(ms).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })
-                    }
-                />
-                <ChartTooltip
-                    cursor={true}
-                    content={<ChartTooltipContent hideLabel />}
-                />
-                <Line
-                    dataKey="value"
-                    type="monotone"
-                    stroke="var(--color-value)"
-                    strokeWidth={2}
-                    dot={false}
-                />
-            </LineChart>
-        </ChartContainer>
+                <LineChart
+                    accessibilityLayer
+                    data={chartData}
+                    margin={{ left: 12, right: 12 }}
+                >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                        dataKey="time"
+                        tickLine={false}
+                        axisLine={false}
+                        interval={0}
+                        padding={{ left: 16, right: 16 }}
+                        tickFormatter={(ms: number) =>
+                            new Date(ms).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })
+                        }
+                    />
+                    <ChartTooltip
+                        cursor={true}
+                        content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Line
+                        dataKey="value"
+                        type="monotone"
+                        stroke="var(--color-value)"
+                        strokeWidth={2}
+                        dot={false}
+                    />
+                </LineChart>
+            </ChartContainer>
         </div>
     );
 }

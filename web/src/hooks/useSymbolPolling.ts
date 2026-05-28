@@ -134,6 +134,7 @@ export default function useSymbolPolling() {
         loading,
         error,
         // authenticate,
+        pollOnce, // using for refresh button in connection status
         loadSymbols,
         startPolling,
         stopPolling,
