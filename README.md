@@ -69,9 +69,9 @@ To build against a real backend instead, set `VITE_USE_MOCKS=false` and point `V
 
 **Docker:**
 
-The dockerfile is baked with the `VITE_USE_MOCKS=false` and `VITE_BASE_URL=https://192.168.3.2/api/v1`. 
+The dockerfile is baked with `VITE_USE_MOCKS=true` and `VITE_BASE_URL=https://192.168.3.2/api/v1`, so the container runs against the MSW mock and works without a live server.
 
-If you want to run the docker setup against a real backend instead. Toggle the `VITE_USE_MOCKS` to false and add the base url value to `VITE_BASE_URL`
+If you want to run the docker setup against a real backend instead, set `VITE_USE_MOCKS` to false and point `VITE_BASE_URL` at your server's base URL.
 
 Then:
 
@@ -126,5 +126,6 @@ I could greatly improve the filtering system for future imporovements. I could a
 Approximately 20 hours
 
 ##### Questions or Notes
+- The AuthenticationForm doesn't sanitize the server url. The MSW takes in any base url and appends the path to it. The dashboard however defaults to https://192.168.3.2. This makes it so that when the server needs to be changed, the backend can handle the validation for the url. The username and password however are authenticated since I'm using Basic Auth.
 - Ran into an issue trying to figure out what the purpose of the refresh button was on the ConnectionStatus Bar/Box. I believe I now understand how its meant to be used. I have connected the refresh button to the loadSymbols method in useSymbolPolling. This makes it possible for additional symbols to be added to the polling cycle without restarting the system and loosing polling data for older symbols.
 - The challenge doc asks me to use Promise.all to fetch Symbol Values. However, Promise.all can abort and stop polling if a single fetch is resolved to a failure. The challenge doc specifically asks me to continue fetching even if there has been a failure in fetching a SymbolValue. This is why i used Promise.allSettled. It fetches in parallel and fails gracefully without stopping the polling.
