@@ -7,7 +7,7 @@ export default function ConfirmDialog({ message, onConfirm, onCancel }: { messag
         <Dialog open={true} onOpenChange={(open) => {
             if (!open) onCancel();
         }}>
-            <DialogContent className="fixed top-1/2 left-1/2 - p-4 rounded">
+            <DialogContent className="fixed top-1/2 left-1/2 p-4 rounded">
                 <p>{message}</p>
                 <div className="flex justify-end gap-2 mt-4">
                     <Button onClick={onCancel} className="px-4 py-2 rounded" variant="ghost">

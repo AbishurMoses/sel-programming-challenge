@@ -1,16 +1,16 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import SymbolsDashboard from '@/components/SymbolsDashboard';
-import type { Symbol as SymbolData, SymbolValue } from '@/types/api';
+import type { Symbol as SymbolData, SymbolValue, ConnectionStatus } from '@/types/api';
 
 const ctxState = {
     symbols: [] as SymbolData[],
     symbolValues: new Map<string, SymbolValue>(),
     symbolHistory: new Map(),
     pollingState: { isPolling: false, interval: 2000 },
-    connectionStatus: { isConnected: true },
+    connectionStatus: { isConnected: true } as ConnectionStatus,
     loading: false,
-    error: null,
+    error: null as { message: string } | null,
     startPolling: vi.fn(),
     stopPolling: vi.fn(),
     setPollingInterval: vi.fn(),
@@ -77,34 +77,32 @@ describe('SymbolsDashboard', () => {
     });
 
     it('should sort by column click', () => {
-        ctxState.symbols = [makeSymbol('Zeta'), makeSymbol('Alpha')];
+        ctxState.symbols = [makeSymbol('Omega'), makeSymbol('Alpha')];
         ctxState.symbolValues = new Map([
-            ['Zeta', makeValue('Zeta', 1)],
+            ['Omega', makeValue('Omega', 1)],
             ['Alpha', makeValue('Alpha', 2)],
         ]);
         render(<SymbolsDashboard onSymbolClick={() => {}} />);
 
-        // Pre-sort: Zeta then Alpha (input order)
-        const rowsBefore = screen.getAllByRole('row').slice(1); // skip header
-        expect(within(rowsBefore[0]).getByText('Zeta')).toBeDefined();
+        const rowsBefore = screen.getAllByRole('row').slice(1); // skipping da header
+        expect(within(rowsBefore[0]).getByText('Omega')).toBeDefined();
 
         fireEvent.click(screen.getByRole('button', { name: /symbol name/i }));
 
         const rowsAfter = screen.getAllByRole('row').slice(1);
         expect(within(rowsAfter[0]).getByText('Alpha')).toBeDefined();
-        expect(within(rowsAfter[1]).getByText('Zeta')).toBeDefined();
+        expect(within(rowsAfter[1]).getByText('Omega')).toBeDefined();
     });
 
     it('should paginate results', () => {
+        // Creating 15 symbols to see if we have more than one page
         ctxState.symbols = Array.from({ length: 15 }, (_, i) => makeSymbol(`Sym${i.toString().padStart(2, '0')}`));
         ctxState.symbolValues = new Map(ctxState.symbols.map((s, i) => [s.name, makeValue(s.name, i)]));
         render(<SymbolsDashboard onSymbolClick={() => {}} />);
 
-        // Page size default is 10
         expect(screen.getByText('Sym00')).toBeDefined();
         expect(screen.queryByText('Sym10')).toBeNull();
 
-        // Click next page (the right chevron button)
         const buttons = screen.getAllByRole('button');
         const nextBtn = buttons.find((b) => b.querySelector('.lucide-chevron-right') !== null);
         if (nextBtn) fireEvent.click(nextBtn);
@@ -129,7 +127,6 @@ describe('SymbolsDashboard', () => {
         ctxState.loading = true;
         ctxState.symbols = [];
         render(<SymbolsDashboard onSymbolClick={() => {}} />);
-        // Skeleton renders something — assert search input is NOT present (which it would be in normal table)
         expect(screen.queryByPlaceholderText(/search symbols/i)).toBeNull();
     });
 
@@ -138,8 +135,34 @@ describe('SymbolsDashboard', () => {
         ctxState.symbolValues = new Map([['TempA', makeValue('TempA', 42)]]);
         render(<SymbolsDashboard onSymbolClick={() => {}} />);
 
-        // ExportCSV renders some download trigger — assert the button or link exists
-        const exportTrigger = screen.queryByText(/csv|export|download/i);
+        const exportTrigger = screen.queryByText(/export/i);
         expect(exportTrigger).not.toBeNull();
+    });
+
+    it('shows the connection error dialog when no symbols load and the server errored', () => {
+        ctxState.symbols = [];
+        ctxState.connectionStatus = { isConnected: false, error: 'Server unreachable' };
+        render(<SymbolsDashboard onSymbolClick={() => {}} />);
+
+        expect(screen.getByText(/could not connect to the server/i)).toBeDefined();
+        expect(screen.getByText('Server unreachable')).toBeDefined();
+    });
+
+    it('shows the lost-feed dialog when all polls fail', () => {
+        ctxState.symbols = [makeSymbol('TempA')];
+        ctxState.symbolValues = new Map([['TempA', makeValue('TempA', 42)]]);
+        ctxState.error = { message: 'All polls failed' } as never;
+        render(<SymbolsDashboard onSymbolClick={() => {}} />);
+
+        expect(screen.getByText(/lost connection to data feed/i)).toBeDefined();
+    });
+
+    it('renders dashes for a symbol with no value yet', () => {
+        ctxState.symbols = [makeSymbol('TempA')];
+        ctxState.symbolValues = new Map(); 
+        render(<SymbolsDashboard onSymbolClick={() => {}} />);
+
+        const row = screen.getByText('TempA').closest('tr')!;
+        expect(within(row).getAllByText('—').length).toBeGreaterThanOrEqual(3);
     });
 });

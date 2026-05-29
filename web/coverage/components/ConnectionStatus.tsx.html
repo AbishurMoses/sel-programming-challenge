@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">72.22% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>13/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/10</span>
+                <span class='fraction'>9/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">71.42% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>5/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>13/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -146,7 +146,22 @@
 <a name='L81'></a><a href='#L81'>81</a>
 <a name='L82'></a><a href='#L82'>82</a>
 <a name='L83'></a><a href='#L83'>83</a>
-<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -165,8 +180,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -215,8 +247,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -229,7 +259,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState } from "react";
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useEffect, useState } from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "./ui/button";
@@ -243,13 +273,30 @@ import { apiService } from "@/services/apiService";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 &nbsp;
 export default function ConnectionStatus() {
-    const { pollOnce, connectionStatus, } = useSymbolPollingContext();
+    const { connectionStatus, loadSymbols } = useSymbolPollingContext();
     const [connectionInfo] = useState({
         user: apiService.getCredentials()?.username || <span class="branch-1 cbranch-no" title="branch not covered" >'Unknown User',</span>
         server: (apiService.getServerUrl().slice(0, apiService.getServerUrl().length - 7)) || <span class="branch-1 cbranch-no" title="branch not covered" >'Unknown Server',</span>
     });
+    const [lastUpdated, setLastUpdated] = useState&lt;number | undefined&gt;(undefined);
 &nbsp;
-    const lastUpdated = new Date(Date.now() - 2000);
+    useEffect(() =&gt; {
+        const lastConnection = connectionStatus.lastConnection;
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (!lastConnection) {
+            setLastUpdated(undefined);
+            return;
+        }
+&nbsp;
+        function <span class="fstat-no" title="function not covered" >tick() {</span>
+            // Just checked if lastConnection is undefined so it will always be defined here
+<span class="cstat-no" title="statement not covered" >            setLastUpdated(Math.floor((Date.now() - lastConnection!.getTime()) / 1000));</span>
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        tick()</span>
+        const id = <span class="cstat-no" title="statement not covered" >setInterval(tick, 1000);</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >        return () =&gt; <span class="cstat-no" title="statement not covered" >c</span>learInterval(id);</span></span>
+    }, [connectionStatus.lastConnection])
+&nbsp;
     async function logout() {
         apiService.clearToken();
         apiService.onUnauthorized?.();
@@ -266,7 +313,7 @@ export default function ConnectionStatus() {
                     &lt;div className="flex items-center gap-2"&gt;
                         &lt;Tooltip&gt;
                             &lt;TooltipTrigger asChild&gt;
-                                &lt;div className="flex items-center gap-2 cursor-pointer select-none"&gt;
+                                &lt;div className="flex items-center gap-2 cursor-pointer"&gt;
                                     &lt;span
                                         className={`h-3 w-3 rounded-full ${connectionStatus.isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
                                             }`}
@@ -293,14 +340,12 @@ export default function ConnectionStatus() {
                         &lt;span className="text-muted-foreground"&gt;Server&lt;/span&gt;
                         &lt;span&gt;{connectionInfo.server}&lt;/span&gt;
                         &lt;span className="text-muted-foreground"&gt;Last updated&lt;/span&gt;
-                        &lt;span&gt;
-                            {Math.floor((Date.now() - lastUpdated.getTime()) / 1000)}s ago
-                        &lt;/span&gt;
+                        &lt;span&gt;{lastUpdated}s ago&lt;/span&gt;
                     &lt;/div&gt;
                 &lt;/div&gt;
             &lt;/CardContent&gt;
             &lt;CardAction className="flex justify-center w-full pt-6 gap-2"&gt;
-                &lt;Button variant="outline" onClick={() =&gt; pollOnce()}&gt;
+                &lt;Button variant="outline" onClick={() =&gt; loadSymbols()}&gt;
                     &lt;RefreshCw className="h-4 w-4 mr-1" /&gt;
                     Refresh
                 &lt;/Button&gt;
@@ -319,7 +364,7 @@ export default function ConnectionStatus() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-28T20:54:20.973Z
+                at 2026-05-29T17:24:53.497Z
             </div>
         <script src="../prettify.js"></script>
         <script>

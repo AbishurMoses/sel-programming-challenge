@@ -92,4 +92,25 @@ describe('UserMenu', () => {
         fireEvent.click(screen.getByRole('button', { name: /remember changes/i }));
         expect(apiServiceMock.setSettings).toHaveBeenCalled();
     });
+
+    it('changes theme when a different theme radio is selected', () => {
+        const { container } = render(<UserMenu />);
+        const dark = container.querySelector('[role="radio"][value="dark"]') as HTMLElement;
+        fireEvent.click(dark);
+        expect(dark.getAttribute('data-state')).toBe('checked');
+    });
+
+    it('stops polling on mount and starts it when toggled on (autostart off)', () => {
+        apiServiceMock.getSettings.mockReturnValueOnce({
+            theme: 'light',
+            pollingInterval: 5000,
+            autoStartPolling: false,
+        });
+        const { container } = render(<UserMenu />);
+        expect(ctxState.stopPolling).toHaveBeenCalled();
+
+        const on = container.querySelector('[role="radio"][value="on"]') as HTMLElement;
+        fireEvent.click(on);
+        expect(ctxState.startPolling).toHaveBeenCalled();
+    });
 });

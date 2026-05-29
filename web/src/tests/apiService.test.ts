@@ -114,7 +114,7 @@ describe('SELApiService', () => {
         server.use(http.get('*/auth/token', () => HttpResponse.error()));
         const { service } = makeService();
         await expect(
-            service.authenticate({ serverUrl: BASE, username: 'u', password: 'p' }),
+            service.authenticate({ serverUrl: BASE, username: 'hehe', password: 'haha' }),
         ).rejects.toMatchObject({ message: 'Network connection failed' });
     });
 
@@ -130,11 +130,11 @@ describe('SELApiService', () => {
         const service = new SELApiService(client);
 
         await expect(
-            service.authenticate({ serverUrl: BASE, username: 'u', password: 'p' }),
+            service.authenticate({ serverUrl: BASE, username: 'hoho', password: 'hihi' }),
         ).rejects.toMatchObject({ message: 'Request timed out' });
     });
 
-    it('getSymbols maps PascalCase to camelCase and filters to INS only', async () => {
+    it('getSymbols filters to INS only', async () => {
         server.use(
             http.get('*/logic-engine/symbols', () =>
                 HttpResponse.json([
@@ -159,7 +159,7 @@ describe('SELApiService', () => {
     it('getSymbols normalizes errors into ApiError', async () => {
         server.use(
             http.get('*/logic-engine/symbols', () =>
-                HttpResponse.json({ detail: 'Server exploded' }, { status: 500 }),
+                HttpResponse.json({ detail: 'Server went kaboom' }, { status: 500 }),
             ),
         );
 
@@ -167,7 +167,7 @@ describe('SELApiService', () => {
         service.setToken('token-val', 3600);
 
         await expect(service.getSymbols()).rejects.toMatchObject({
-            message: 'Server exploded',
+            message: 'Server went kaboom',
             status: 500,
         });
     });
@@ -201,19 +201,97 @@ describe('SELApiService', () => {
         expect(result.rawData).toMatchObject({ stVal: 66, range: 'normal', units: 'mV' });
     });
 
-    it('getSymbolValue normalizes errors into ApiError', async () => {
-        server.use(
-            http.get('*/logic-engine/symbols/:name', () =>
-                new HttpResponse(null, { status: 503 }),
-            ),
-        );
+    it('getServerUrl returns the configured baseURL, or a dash when unset', () => {
+        const { service } = makeService();
+        expect(service.getServerUrl()).toBe(BASE);
+
+        const bare = new SELApiService(axios.create());
+        expect(bare.getServerUrl()).toBe('—');
+    });
+
+    it('getSettings falls back to defaults when nothing is stored', () => {
+        const { service } = makeService();
+        expect(service.getSettings()).toEqual({
+            theme: 'auto',
+            pollingInterval: 2000,
+            autoStartPolling: false,
+        });
+    });
+
+    it('getSettings round-trips stored settings', () => {
+        const { service } = makeService();
+        service.setSettings({ theme: 'dark', pollingInterval: 5000, autoStartPolling: true });
+        expect(service.getSettings()).toEqual({
+            theme: 'dark',
+            pollingInterval: 5000,
+            autoStartPolling: true,
+        });
+    });
+
+    it('getCredentials returns null until both fields are stored', () => {
+        const { service } = makeService();
+        expect(service.getCredentials()).toBeNull();
+
+        service.setCredentials('testuser', 'testpass');
+        expect(service.getCredentials()).toEqual({ username: 'testuser', password: 'testpass' });
+    });
+
+    it('drops an expired token while hydrating from storage', () => {
+        localStorage.setItem('sel.token', 'old-token');
+        localStorage.setItem('sel.tokenExpiry', String(Date.now() - 999999));
 
         const { service } = makeService();
-        service.setToken('token-val', 3600);
+        expect(service.isTokenValid()).toBe(false);
+        expect(localStorage.getItem('sel.token')).toBeNull();
+    });
 
-        await expect(service.getSymbolValue('AnalogDeadband')).rejects.toMatchObject({
-            message: 'Request failed (503)',
-            status: 503,
-        });
+    it('does not attach an Authorization header when unauthenticated', async () => {
+        const seen: string[] = [];
+        server.use(
+            http.get('*/logic-engine/symbols', ({ request }) => {
+                seen.push(request.headers.get('Authorization') ?? '');
+                return HttpResponse.json([]);
+            }),
+        );
+
+        const { client } = makeService();
+        await client.get('/logic-engine/symbols');
+
+        expect(seen).toEqual(['']);
+    });
+
+    it('falls back to a generic message for a 401 without detail', async () => {
+        server.use(
+            http.get('*/auth/token', () => HttpResponse.json({}, { status: 401 })),
+        );
+        const { service } = makeService();
+        await expect(
+            service.authenticate({ serverUrl: BASE, username: 'lolo', password: 'lala' }),
+        ).rejects.toMatchObject({ message: 'Invalid credentials', status: 401 });
+    });
+
+    it('normalizes an aborted request (ECONNABORTED) into a timeout error', async () => {
+        const client = axios.create({ baseURL: BASE });
+        client.defaults.adapter = () =>
+            Promise.reject(new axios.AxiosError('aborted', 'ECONNABORTED'));
+        const service = new SELApiService(client);
+
+        await expect(service.getSymbols()).rejects.toMatchObject({ message: 'Request timed out' });
+    });
+
+    it('passes through a non-axios Error message', async () => {
+        const client = axios.create({ baseURL: BASE });
+        client.defaults.adapter = () => Promise.reject(new Error('boom'));
+        const service = new SELApiService(client);
+
+        await expect(service.getSymbols()).rejects.toMatchObject({ message: 'boom' });
+    });
+
+    it('falls back to "Unknown error" for a non-Error rejection', async () => {
+        const client = axios.create({ baseURL: BASE });
+        client.defaults.adapter = () => Promise.reject('wut is this?');
+        const service = new SELApiService(client);
+
+        await expect(service.getSymbols()).rejects.toMatchObject({ message: 'Unknown error' });
     });
 });

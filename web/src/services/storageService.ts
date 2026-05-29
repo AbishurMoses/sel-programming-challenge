@@ -10,7 +10,7 @@ export const STORAGE_KEYS = {
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
-function safeGet(key: string): string | null {
+function GetStorage(key: string): string | null {
     try {
         return localStorage.getItem(key);
     } catch {
@@ -18,7 +18,7 @@ function safeGet(key: string): string | null {
     }
 }
 
-function safeSet(key: string, value: string): void {
+function SetStorage(key: string, value: string): void {
     try {
         localStorage.setItem(key, value);
     } catch {
@@ -36,11 +36,11 @@ function safeRemove(key: string): void {
 
 export const storageService = {
     get(key: StorageKey): string | null {
-        return safeGet(key);
+        return GetStorage(key);
     },
 
     set(key: StorageKey, value: string): void {
-        safeSet(key, value);
+        SetStorage(key, value);
     },
 
     remove(key: StorageKey): void {
@@ -48,22 +48,22 @@ export const storageService = {
     },
 
     getNumber(key: StorageKey): number | null {
-        const raw = safeGet(key);
+        const raw = GetStorage(key);
         if (raw === null) return null;
         const n = Number(raw);
         return Number.isFinite(n) ? n : null;
     },
 
     setNumber(key: StorageKey, value: number): void {
-        safeSet(key, String(value));
+        SetStorage(key, String(value));
     },
 
     getBoolean(key: StorageKey): boolean {
-        return safeGet(key) === 'true';
+        return GetStorage(key) === 'true';
     },
 
     setBoolean(key: StorageKey, value: boolean): void {
-        safeSet(key, String(value));
+        SetStorage(key, String(value));
     },
 
     clearAll(): void {

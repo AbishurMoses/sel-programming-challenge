@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './App.css'
 import AuthenticationForm from './components/AuthenticationForm'
 import Navbar from './components/Navbar'
 import SymbolDetailView from './components/SymbolDetailView'

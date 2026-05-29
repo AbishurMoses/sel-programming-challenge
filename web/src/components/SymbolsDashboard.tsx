@@ -73,6 +73,7 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
                 onClose={() => setConnectErrorOpen(false)}
                 title="Could not connect to the server"
                 message={connectionStatus.error ?? "The dashboard could not reach the SEL server."}
+                status={404}
                 suggestion="Check your server URL and network connection, then sign in again."
             />
             <ErrorDialog
@@ -80,6 +81,7 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
                 onClose={() => setPollsErrorOpen(false)}
                 title="Lost connection to data feed"
                 message={error?.message ?? "All recent polls failed."}
+                status={500}
                 suggestion="Polling will keep retrying. If this persists, check the server status."
             />
         </>

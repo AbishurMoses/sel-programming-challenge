@@ -50,11 +50,8 @@ export function DataTableComponent<TData, TValue>({
     startedPolling,
     startPolling,
 }: DataTableProps<TData, TValue>) {
-
     const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-        []
-    )
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [tableSize, setTableSize] = useState(10)
 
     const table = useReactTable({
@@ -78,6 +75,9 @@ export function DataTableComponent<TData, TValue>({
         },
     })
 
+    /* Without this table state doesn't update when tableSize changes.
+    * Probably because there is no rerendering of the component when the tableSize changes???
+    */
     useEffect(() => {
         table.setPageSize(tableSize);
     }, [tableSize, table])
@@ -86,7 +86,6 @@ export function DataTableComponent<TData, TValue>({
     const pageSize = table.getState().pagination.pageSize;
     const currentRowsCount = table.getRowModel().rows.length;
     const totalRowsCount = table.getFilteredRowModel().rows.length;
-
     const toResult = pageIndex * pageSize + currentRowsCount;
 
     return (

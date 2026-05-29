@@ -1,5 +1,6 @@
 import { type rawApiSymbol } from '../types/api';
 
+// Mock symbol data generated with Gemini
 export const symbols: rawApiSymbol[] = [
   { "Name": "AirFlowVelocity", "Type": "INS", "Description": "Primary intake air flow speed" },
   { "Name": "AmbientHumidity", "Type": "INS", "Description": "Enclosure relative humidity percentage" },
@@ -64,7 +65,7 @@ export const symbols: rawApiSymbol[] = [
   { "Name": "WaterTurbidityValue", "Type": "INS", "Description": "Influent intake filtration optical turbidity" },
 ]
 
-// Define a map of custom engineering units and ranges to make the dashboard look highly realistic
+// defining custom ranges
 const METRIC_PROFILES: Record<string, { units: string; min: number; max: number }> = {
   Velocity: { units: "m/s", min: 10, max: 95 },
   Humidity: { units: "%", min: 30, max: 85 },
@@ -77,13 +78,6 @@ const METRIC_PROFILES: Record<string, { units: string; min: number; max: number 
   Capacity: { units: "%", min: 80, max: 100 },
 };
 
-// Helper function to get a profile match based on the symbol name
-const getProfile = (name: string) => {
-  const match = Object.keys(METRIC_PROFILES).find((key) => name.includes(key));
-  return match ? METRIC_PROFILES[match] : { units: "mV", min: 10, max: 150 };
-};
-
-// The list of all your 62 alphabetically sorted symbol names
 const SYMBOL_NAMES = [
   "AirFlowVelocity", "AmbientHumidity", "AnalogDeadband", "BearingVibrationA", "BearingVibrationB",
   "BinaryDebounce", "BoilerWaterLevel", "BrakePadWearIndicator", "BusVoltagePhaseA", "BusVoltagePhaseB",
@@ -100,20 +94,18 @@ const SYMBOL_NAMES = [
   "WaterTurbidityValue"
 ];
 
-/**
- * Generates the full dictionary state tracking your 62 telemetry endpoints.
- * You can call this inside your mock engine to produce the entire live state payload!
- */
+const getProfile = (name: string) => {
+  const match = Object.keys(METRIC_PROFILES).find((key) => name.includes(key));
+  return match ? METRIC_PROFILES[match] : { units: "mV", min: 10, max: 150 };
+};
 export const generateLiveMetricsDictionary = (): Record<string, any> => {
   const dictionary: Record<string, any> = {};
 
   SYMBOL_NAMES.forEach((name) => {
     const profile = getProfile(name);
 
-    // Simulate real values oscillating inside realistic ranges
     const randomValue = Math.floor(Math.random() * (profile.max - profile.min + 1)) + profile.min;
 
-    // Randomly flag a field as high/low 10% of the time to test your UI alert badges
     let systemRange = "normal";
     if (randomValue > profile.max - (profile.max * 0.1)) systemRange = "high";
     if (randomValue < profile.min + (profile.min * 0.1)) systemRange = "low";
@@ -121,7 +113,7 @@ export const generateLiveMetricsDictionary = (): Record<string, any> => {
     dictionary[name] = {
       stVal: randomValue,
       q: {
-        validity: Math.random() > 0.95 ? "questionable" : "good", // Mock rare network quality disruptions
+        validity: Math.random() > 0.95 ? "questionable" : "good", 
         source: "process",
         test: false,
         operatorBlocked: false,
@@ -137,7 +129,7 @@ export const generateLiveMetricsDictionary = (): Record<string, any> => {
         }
       },
       t: {
-        value: new Date().toISOString(), // Yields strict runtime timestamps for your table updates
+        value: new Date().toISOString(), 
         leapSecondsKnown: true,
         clockFailure: false,
         clockNotSynchronized: false,

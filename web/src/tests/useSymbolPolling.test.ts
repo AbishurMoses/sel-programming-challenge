@@ -43,7 +43,6 @@ describe('useSymbolPolling', () => {
 
         await waitFor(() => expect(result.current.symbols.length).toBeGreaterThan(0));
 
-        // INT is filtered out by apiService.getSymbols; only INS remain
         expect(result.current.symbols.map((s) => s.name)).toEqual(['TempA', 'TempB']);
         expect(result.current.connectionStatus.isConnected).toBe(true);
         expect(result.current.loading).toBe(false);
@@ -83,8 +82,7 @@ describe('useSymbolPolling', () => {
         const { result } = renderHook(() => useSymbolPolling());
         await waitFor(() => expect(result.current.symbols.length).toBe(2));
 
-        // Use a short interval so we don't wait forever
-        act(() => result.current.setPollingInterval(50));
+        act(() => result.current.setPollingInterval(1));
         act(() => result.current.startPolling());
 
         await waitFor(() => {
@@ -115,10 +113,9 @@ describe('useSymbolPolling', () => {
             await result.current.pollOnce();
         });
 
-        // TempA failed; TempB succeeded — loop did not abort
+        // TempA failed but TempB succeeded so loop should not abort
         expect(result.current.symbolValues.get('TempA')).toBeUndefined();
         expect(result.current.symbolValues.get('TempB')?.stVal).toBe(99);
-        // Partial failure should not set the all-polls-failed error
         expect(result.current.error).toBeNull();
     });
 
@@ -134,7 +131,7 @@ describe('useSymbolPolling', () => {
         expect(hist).toBeDefined();
         expect(hist!.dataPoints.length).toBeGreaterThan(0);
 
-        // Inject a synthetic stale point >5 min old and re-poll; old point must be evicted.
+        // is 1 min over stale threshold
         const sixMinAgo = new Date(Date.now() - 6 * 60 * 1000);
         hist!.dataPoints.unshift({
             value: 0,
@@ -162,7 +159,6 @@ describe('useSymbolPolling', () => {
 
         const value = result.current.symbolValues.get('TempA');
         expect(value?.lastUpdated).toBeInstanceOf(Date);
-        // The freshly-set timestamp should be within the last few seconds.
         const ageMs = Date.now() - value!.lastUpdated.getTime();
         expect(ageMs).toBeLessThan(1000);
     });
@@ -175,7 +171,7 @@ describe('useSymbolPolling', () => {
         expect(result.current.pollingState.interval).toBe(5000);
     });
 
-    it('pollOnce can be invoked manually (refresh button)', async () => {
+    it('pollOnce can be invoked manually via refresh button', async () => {
         const { result } = renderHook(() => useSymbolPolling());
         await waitFor(() => expect(result.current.symbols.length).toBe(2));
 

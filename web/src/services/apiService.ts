@@ -187,11 +187,9 @@ export class SELApiService {
         }
     }
 
-
-    // Need to map variable from rawApiSymbol to match Symbol
     async getSymbols(): Promise<Symbol[]> {
         try {
-            const { data } = await this.http.get<rawApiSymbol[]>('/logic-engine/symbols');
+            const { data } = await this.http.get<rawApiSymbol[]>('/logic-engine/symbols?sort=asc&limit=50');
             return data.map((s) => this.mapSymbol(s)).filter((s) => s.type === 'INS');
         } catch (error) {
             this.handleError(error);

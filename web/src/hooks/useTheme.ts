@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { apiService } from '@/services/apiService';
 import type { ResolvedTheme, Theme } from '@/types/api';
 
-function systemPrefersDark(): boolean {
+function systemIsDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
 function resolve(theme: Theme): ResolvedTheme {
-  if (theme === 'auto') return systemPrefersDark() ? 'dark' : 'light';
+  if (theme === 'auto') return systemIsDark() ? 'dark' : 'light';
   return theme;
 }
 

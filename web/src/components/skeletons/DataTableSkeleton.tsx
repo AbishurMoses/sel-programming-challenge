@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table"
 
 export default function TableSkeleton() {
-  const skeletonRows = Array.from({ length: 10 })
+  const skeletonRows = new Array(10).fill(null)
 
   return (
     <div className="w-full space-y-4">

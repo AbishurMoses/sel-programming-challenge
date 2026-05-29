@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "./ui/button";
@@ -12,13 +12,30 @@ import { apiService } from "@/services/apiService";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 
 export default function ConnectionStatus() {
-    const { pollOnce, connectionStatus, } = useSymbolPollingContext();
+    const { connectionStatus, loadSymbols } = useSymbolPollingContext();
     const [connectionInfo] = useState({
         user: apiService.getCredentials()?.username || 'Unknown User',
         server: (apiService.getServerUrl().slice(0, apiService.getServerUrl().length - 7)) || 'Unknown Server',
     });
+    const [lastUpdated, setLastUpdated] = useState<number | undefined>(undefined);
 
-    const lastUpdated = new Date(Date.now() - 2000);
+    useEffect(() => {
+        const lastConnection = connectionStatus.lastConnection;
+        if (!lastConnection) {
+            setLastUpdated(undefined);
+            return;
+        }
+
+        function tick() {
+            // Just checked if lastConnection is undefined so it will always be defined here
+            setLastUpdated(Math.floor((Date.now() - lastConnection!.getTime()) / 1000));
+        }
+
+        tick()
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [connectionStatus.lastConnection])
+
     async function logout() {
         apiService.clearToken();
         apiService.onUnauthorized?.();
@@ -35,7 +52,7 @@ export default function ConnectionStatus() {
                     <div className="flex items-center gap-2">
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div className="flex items-center gap-2 cursor-pointer select-none">
+                                <div className="flex items-center gap-2 cursor-pointer">
                                     <span
                                         className={`h-3 w-3 rounded-full ${connectionStatus.isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
                                             }`}
@@ -62,14 +79,12 @@ export default function ConnectionStatus() {
                         <span className="text-muted-foreground">Server</span>
                         <span>{connectionInfo.server}</span>
                         <span className="text-muted-foreground">Last updated</span>
-                        <span>
-                            {Math.floor((Date.now() - lastUpdated.getTime()) / 1000)}s ago
-                        </span>
+                        <span>{lastUpdated}s ago</span>
                     </div>
                 </div>
             </CardContent>
             <CardAction className="flex justify-center w-full pt-6 gap-2">
-                <Button variant="outline" onClick={() => pollOnce()}>
+                <Button variant="outline" onClick={() => loadSymbols()}>
                     <RefreshCw className="h-4 w-4 mr-1" />
                     Refresh
                 </Button>

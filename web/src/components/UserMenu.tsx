@@ -11,7 +11,6 @@ import { toast } from "sonner";
 
 type SettingsProps = { settings: Settings; setSetting: Dispatch<SetStateAction<Settings>> };
 
-
 export default function UserMenu() {
     const [settings, setSetting] = useState<Settings>(() => apiService.getSettings() as Settings);
     const { setPollingInterval, startPolling, stopPolling } = useSymbolPollingContext();

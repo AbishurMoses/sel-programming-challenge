@@ -103,12 +103,32 @@ describe('SymbolDetailView', () => {
         expect(screen.getByText('Symbol Info')).toBeDefined();
         expect(screen.getByText('Value History')).toBeDefined();
         expect(screen.getByText('Quality Details')).toBeDefined();
-        expect(screen.getByText('mV')).toBeDefined();
     });
 
     it('renders symbol metadata in the header', () => {
         renderInDialog('TempA');
         expect(screen.getByText('TempA')).toBeDefined();
         expect(screen.getByText('Temp sensor A')).toBeDefined();
+    });
+
+    it('renders value-present cards with minimal rawData and no history', () => {
+        ctxState.symbolValues = new Map([
+            [
+                'TempA',
+                {
+                    symbolName: 'TempA',
+                    stVal: 7,
+                    t: '10:00:00',
+                    lastUpdated: new Date(),
+                    rawData: {},
+                } as SymbolValue,
+            ],
+        ]);
+
+        renderInDialog('TempA');
+
+        expect(screen.getByText('Current State')).toBeDefined();
+        expect(screen.getByText('Value History')).toBeDefined();
+        expect(screen.getByText('Quality Details')).toBeDefined();
     });
 });

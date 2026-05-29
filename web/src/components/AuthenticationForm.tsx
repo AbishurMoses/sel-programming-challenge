@@ -14,7 +14,7 @@ import { Card } from "./ui/card"
 import { apiService } from "@/services/apiService"
 import type { ApiError } from "@/types/api"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2 } from "lucide-react"
+import FullPageSkeleton from "./skeletons/FullPageSkeleton"
 
 interface AuthenticationFormProps {
   onSuccess: () => void
@@ -39,7 +39,7 @@ export default function AuthenticationForm({ onSuccess }: AuthenticationFormProp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasRememberedCreds] = useState(() => !!apiService.getCredentials())
 
-  const handleChange = (e: { target: { id: any; value: any } }) => {
+  const handleChange = (e: { target: { id: string; value: string } }) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
@@ -82,12 +82,7 @@ export default function AuthenticationForm({ onSuccess }: AuthenticationFormProp
 
   if (isSubmitting) {
     return (
-      <div className="fixed flex flex-col items-center justify-center gap-3">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-sm font-medium">
-          Authenticating...
-        </p>
-      </div>
+      <FullPageSkeleton message="Authenticating..." />
     )
   }
 
@@ -164,7 +159,7 @@ export default function AuthenticationForm({ onSuccess }: AuthenticationFormProp
           )}
           <Field orientation="horizontal">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Connecting..." : "Connect to Server"}
+              Connect to Server
             </Button>
           </Field>
         </FieldSet>

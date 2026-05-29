@@ -4,7 +4,7 @@ import { apiService } from "@/services/apiService";
 
 const MAX_HISTORY_POINTS = 50
 const MAX_SYMBOLS = 50
-const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const HISTORY_WINDOW_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export default function useSymbolPolling() {
     const [symbols, setSymbols] = useState<SymbolData[]>([]);

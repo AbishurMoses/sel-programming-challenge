@@ -19,7 +19,7 @@ const { ctxState, apiServiceMock } = vi.hoisted(() => ({
         disconnect: vi.fn(),
     },
     apiServiceMock: {
-        getCredentials: vi.fn(() => ({ username: 'testuser', password: 'pw' })),
+        getCredentials: vi.fn(() => ({ username: 'testuser', password: 'testpass' })),
         getServerUrl: vi.fn(() => 'http://192.168.3.2:8080/api/v1'),
         clearToken: vi.fn(),
         onUnauthorized: vi.fn(),
@@ -39,6 +39,7 @@ import ConnectionStatus from '@/components/ConnectionStatus';
 beforeEach(() => {
     ctxState.connectionStatus = { isConnected: true };
     ctxState.pollOnce.mockClear();
+    ctxState.loadSymbols.mockClear();
     apiServiceMock.clearToken.mockClear();
     apiServiceMock.onUnauthorized.mockClear();
 });
@@ -47,7 +48,7 @@ describe('ConnectionStatus', () => {
     it('renders user and server info from apiService', () => {
         render(<TooltipProvider><ConnectionStatus /></TooltipProvider>);
         expect(screen.getByText('testuser')).toBeDefined();
-        // server slice trimming may vary; assert apiService was consulted
+
         expect(apiServiceMock.getCredentials).toHaveBeenCalled();
         expect(apiServiceMock.getServerUrl).toHaveBeenCalled();
     });
@@ -63,10 +64,10 @@ describe('ConnectionStatus', () => {
         expect(screen.getByText('Disconnected')).toBeDefined();
     });
 
-    it('calls pollOnce when Refresh button clicked', () => {
+    it('reloads symbols when Refresh button clicked', () => {
         render(<TooltipProvider><ConnectionStatus /></TooltipProvider>);
         fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
-        expect(ctxState.pollOnce).toHaveBeenCalledTimes(1);
+        expect(ctxState.loadSymbols).toHaveBeenCalledTimes(1);
     });
 
     it('clears token and notifies on Logout', () => {

@@ -12,10 +12,9 @@ interface ErrorDialogProps {
     onClose: () => void;
     title: string;
     message: string;
-    status?: number | string;
+    status: number;
     suggestion?: string;
 }
-
 export default function ErrorDialog({
     open,
     onClose,
@@ -34,18 +33,16 @@ export default function ErrorDialog({
                 <div className="flex flex-col gap-1 text-sm">
                     {status !== undefined && (
                         <p>
-                            <span className="text-muted-foreground">Status:</span> {status}
+                            <span className="text-muted-foreground"></span> {status}
                         </p>
                     )}
                     {suggestion && (
                         <p>
-                            <span className="text-muted-foreground">Suggestion:</span> {suggestion}
+                            <span className="text-muted-foreground"></span> {suggestion}
                         </p>
                     )}
                 </div>
-                {/* <DialogFooter> */}
-                    <Button onClick={onClose}>Close</Button>
-                {/* </DialogFooter> */}
+                <Button onClick={onClose}>Close</Button>
             </DialogContent>
         </Dialog>
     );

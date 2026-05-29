@@ -124,15 +124,14 @@ export default function SymbolDetailView({ name }: { name: string }) {
 }
 
 export function SymbolDetailViewChart({ historyPoints }: { historyPoints: SymbolHistoryPoint[] }) {
-
     // X-axis of the graph will adjust to the time.
-    // Need to convert the time to milliseconds
-    // it will then automatically set it where it needs to be
+    // Need to convert the time to milliseconds.
+    // it will then automatically set the point where 
+    // it needs to be.
     const chartData = historyPoints?.map((point: SymbolHistoryPoint) => ({
         value: point.value,
         time: point.timestamp.getTime(),
     })) ?? [];
-
 
     const chartConfig = {
         value: {
@@ -151,7 +150,6 @@ export function SymbolDetailViewChart({ historyPoints }: { historyPoints: Symbol
             scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
         }
     }, [chartData.length]);
-
 
     return (
         <div ref={scrollRef} className="overflow-x-auto">
