@@ -4,7 +4,7 @@ import { Label } from "./ui/label";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
 import { CartesianGrid, Line, XAxis, LineChart } from "recharts";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
-import type { SymbolAlert, SymbolHistoryPoint } from "@/types/api";
+import type { SymbolHistoryPoint } from "@/types/api";
 import { useEffect, useRef, useState } from "react";
 import { getQualityBadge, getRangeBadge } from "@/lib/badges";
 import { Activity } from "lucide-react";
@@ -23,17 +23,42 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 export default function SymbolDetailView({ name }: { name: string }) {
-    // import the set and remove Alert functions from apiService.ts
-    const { symbolHistory, symbolValues, symbols, pollingState, symbolAlerts, setSymbolAlerts, startPolling } = useSymbolPollingContext();
+    const { symbolHistory, symbolValues, symbols, pollingState, symbolAlerts, setAlert, removeAlert, startPolling } = useSymbolPollingContext();
     const history = symbolHistory.get(name)
     const value = symbolValues.get(name)
     const symbol = symbols.find(s => s.name === name)
 
-    const [rawAlert, setRawAlert] = useState<SymbolAlert | null>(symbolAlerts)
+    const existingAlert = symbolAlerts.get(name);
+    const [highInput, setHighInput] = useState("");
+    const [lowInput, setLowInput] = useState("");
 
-    const handleSubmit = () => {
+    // Prefilling the fields when the modal opens
+    useEffect(() => {
+        // If i dont't convert to string, Number() can run into a problem with the undefined types
+        const toString = (val: number | null | undefined) => {
+            if (val == null) {
+                return ""
+            } else {
+                return String(val)
+            }
+        }
 
-    }
+        setHighInput(toString(existingAlert?.highThreshold));
+        setLowInput(toString(existingAlert?.lowThreshold));
+    }, [name, existingAlert]);
+
+    const toSafeThreshold = (raw: string) => {
+        const n = Number(raw);
+        if (raw.trim() === "" || Number.isNaN(n)) {
+            return null
+        } else {
+            return n
+        }
+    };
+
+    const handleSetAlert = () => {
+        setAlert(name, toSafeThreshold(highInput), toSafeThreshold(lowInput));
+    };
 
     if (!value) {
         return (
@@ -136,29 +161,31 @@ export default function SymbolDetailView({ name }: { name: string }) {
                         <FieldSet>
                             <FieldGroup>
                                 <Field>
-                                    <FieldLabel>High Threshold</FieldLabel>
+                                    <FieldLabel htmlFor="high">High Threshold</FieldLabel>
                                     <Input
                                         id="high"
-                                        value={symbolAlerts.high}
-                                        onChange={setSymbolAlerts(() => {
-                                            symbolAlerts.high
-                                        })}
+                                        type="number"
+                                        value={highInput}
+                                        onChange={(e) => setHighInput(e.target.value)}
                                     />
                                 </Field>
                                 <Field>
-                                    <FieldLabel>Low Threshold</FieldLabel>
+                                    <FieldLabel htmlFor="low">Low Threshold</FieldLabel>
                                     <Input
                                         id="low"
-                                        value={symbolAlerts.low}
-                                        onChange={setSymbolAlerts(() => {
-                                            symbolAlerts.high
-                                        })}
+                                        type="number"
+                                        value={lowInput}
+                                        onChange={(e) => setLowInput(e.target.value)}
                                     />
                                 </Field>
                                 <Field>
-                                    <Button onClick={handleSubmit}>Set Alert</Button>
-                                    <Button onClick={handleSubmit}>Remove Alert</Button>
-                                </Field>    
+                                    <Button onClick={handleSetAlert}>Set Alert</Button>
+                                    {existingAlert && (
+                                        <Button onClick={() => removeAlert(name)}>
+                                            Remove Alert
+                                        </Button>
+                                    )}
+                                </Field>
                             </FieldGroup>
                         </FieldSet>
                     </CardContent>

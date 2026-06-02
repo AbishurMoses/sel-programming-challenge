@@ -186,23 +186,7 @@ export class SELApiService {
             this.handleError(error);
         }
     }
-
-    async setAlert(symbolName: string, high: number | null, low: number | null) {
-        try {
-            // Call useSymbolPolling's setAlert
-        } catch (error) {
-            throw error
-        }
-    }
-
-    async removeAlert(symbolName: string) {
-        try {
-            // Call useSymbolPolling's removeAlert
-        } catch (error) {
-            throw error
-        }
-    }
-
+    
     async getSymbols(): Promise<Symbol[]> {
         try {
             const { data } = await this.http.get<rawApiSymbol[]>('/logic-engine/symbols?sort=asc&limit=50');

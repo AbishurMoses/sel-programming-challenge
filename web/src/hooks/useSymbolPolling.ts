@@ -1,6 +1,7 @@
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type ApiError, type ConnectionStatus, type PollingState, type SymbolAlert, type Symbol as SymbolData, type SymbolHistory, type SymbolHistoryPoint, type SymbolValue } from "@/types/api";
 import { apiService } from "@/services/apiService";
+import { toast } from "sonner";
 
 const MAX_HISTORY_POINTS = 50
 const MAX_SYMBOLS = 50
@@ -15,13 +16,22 @@ export default function useSymbolPolling() {
         isPolling: false,
         interval: 2000,
     });
-    const [symbolAlerts, setSymbolAlerts] = useState<SymbolAlert[]>()
+    // Map lets me treat the alerts like a dictionary
+    // Making it a map also makes it much easier to handle
+    const [symbolAlerts, setSymbolAlerts] = useState<Map<string, SymbolAlert>>(new Map());
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<ApiError | null>(null);
 
     const intervalRef = useRef<number | null>(null);
     const symbolsRef = useRef<SymbolData[]>([]);
     symbolsRef.current = symbols;
+
+    // Mirroring alerts into a ref so pollOnce dependenciis read the latest 
+    const symbolAlertsRef = useRef<Map<string, SymbolAlert>>(symbolAlerts);
+    symbolAlertsRef.current = symbolAlerts;
+
+    // Using a ref so that I don't cause re-renders.
+    const triggeredRef = useRef<Map<string, { high: boolean; low: boolean }>>(new Map());
 
     // apiService.ts handles authentication
     // const authenticate = async () => {}
@@ -74,6 +84,50 @@ export default function useSymbolPolling() {
             });
             return receivedHistory;
         });
+
+        // Threshold checks
+        const alerts = symbolAlertsRef.current;
+        results.forEach((r, i) => {
+            if (r.status !== 'fulfilled') {
+                return;
+            }
+
+            const alert = alerts.get(names[i]);
+            if (!alert) {
+                return
+            };
+
+            const stVal = r.value.stVal;
+            const triggered = triggeredRef.current.get(names[i]) ?? { high: false, low: false };
+
+            // Need to check both high and low since they both send different toasts
+            // could check both in the same if statement but this makes it easier to read
+            if (alert.highThreshold != null) {
+                // Has to be inclusive
+                if (stVal >= alert.highThreshold) {
+                    if (!triggered.high) {
+                        toast.error(`⚠ ${names[i]} value (${stVal}) exceeded high threshold (${alert.highThreshold})`);
+                        triggered.high = true;
+                    }
+                } else {
+                    triggered.high = false;
+                }
+            }
+
+            if (alert.lowThreshold != null) {
+                // Has to be inclusive
+                if (stVal <= alert.lowThreshold) {
+                    if (!triggered.low) {
+                        toast.error(`⚠ ${names[i]} value (${stVal}) dropped below low threshold (${alert.lowThreshold})`);
+                        triggered.low = true;
+                    }
+                } else {
+                    triggered.low = false;
+                }
+            }
+
+            triggeredRef.current.set(names[i], triggered);
+        });
     }, []);
 
     const loadSymbols = useCallback(async () => {
@@ -106,24 +160,23 @@ export default function useSymbolPolling() {
         }))
     }, [])
 
-    // const setAlert = useCallback((symbolName: string, high: number | null, low: number | null) => {
-    //     setSymbolAlerts(prev => {
-    //         ...prev,
-    //         {
-    //             symbolName: symbolName,
-    //             high: Number(high),
-    //             low: Number(low)
-    //         },
-    //     })
-    // }, [])
+    const setAlert = useCallback((symbolName: string, high: number | null, low: number | null) => {
+        setSymbolAlerts(prev => {
+            const next = new Map(prev);
+            next.set(symbolName, { symbolName, highThreshold: high, lowThreshold: low });
+            return next;
+        });
+    }, []);
 
-    // const removeAlert = useCallback(() => {
-    //     setSymbolAlerts(prev => ({
-    //         ...prev,
-    //         // delete symbolAlert
-    //     }))
-    // }, [])
- 
+    const removeAlert = useCallback((symbolName: string) => {
+        setSymbolAlerts(prev => {
+            const next = new Map(prev);
+            next.delete(symbolName);
+            return next;
+        });
+        triggeredRef.current.delete(symbolName);
+    }, []);
+
     useEffect(() => {
         if (!pollingState.isPolling) return;
 
@@ -153,9 +206,10 @@ export default function useSymbolPolling() {
         loading,
         error,
         symbolAlerts,
+        setAlert,
+        removeAlert,
         // authenticate,
-        pollOnce, // using for refresh button in connection status
-        setSymbolAlerts,
+        pollOnce, 
         loadSymbols,
         startPolling,
         stopPolling,
