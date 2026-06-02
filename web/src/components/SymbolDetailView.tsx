@@ -4,11 +4,14 @@ import { Label } from "./ui/label";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
 import { CartesianGrid, Line, XAxis, LineChart } from "recharts";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
-import type { SymbolHistoryPoint } from "@/types/api";
-import { useEffect, useRef } from "react";
+import type { SymbolAlert, SymbolHistoryPoint } from "@/types/api";
+import { useEffect, useRef, useState } from "react";
 import { getQualityBadge, getRangeBadge } from "@/lib/badges";
 import { Activity } from "lucide-react";
 import { Button } from "./ui/button";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
+import { Input } from "@/components/ui/input"
+
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
@@ -20,10 +23,17 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 export default function SymbolDetailView({ name }: { name: string }) {
-    const { symbolHistory, symbolValues, symbols, pollingState, startPolling } = useSymbolPollingContext();
+    // import the set and remove Alert functions from apiService.ts
+    const { symbolHistory, symbolValues, symbols, pollingState, symbolAlerts, setSymbolAlerts, startPolling } = useSymbolPollingContext();
     const history = symbolHistory.get(name)
     const value = symbolValues.get(name)
     const symbol = symbols.find(s => s.name === name)
+
+    const [rawAlert, setRawAlert] = useState<SymbolAlert | null>(symbolAlerts)
+
+    const handleSubmit = () => {
+
+    }
 
     if (!value) {
         return (
@@ -116,6 +126,41 @@ export default function SymbolDetailView({ name }: { name: string }) {
                                 }
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Threshold Alerts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FieldSet>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel>High Threshold</FieldLabel>
+                                    <Input
+                                        id="high"
+                                        value={symbolAlerts.high}
+                                        onChange={setSymbolAlerts(() => {
+                                            symbolAlerts.high
+                                        })}
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Low Threshold</FieldLabel>
+                                    <Input
+                                        id="low"
+                                        value={symbolAlerts.low}
+                                        onChange={setSymbolAlerts(() => {
+                                            symbolAlerts.high
+                                        })}
+                                    />
+                                </Field>
+                                <Field>
+                                    <Button onClick={handleSubmit}>Set Alert</Button>
+                                    <Button onClick={handleSubmit}>Remove Alert</Button>
+                                </Field>    
+                            </FieldGroup>
+                        </FieldSet>
                     </CardContent>
                 </Card>
             </div>

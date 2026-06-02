@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { type ApiError, type ConnectionStatus, type PollingState, type Symbol as SymbolData, type SymbolHistory, type SymbolHistoryPoint, type SymbolValue } from "@/types/api";
+import { use, useCallback, useEffect, useRef, useState } from "react";
+import { type ApiError, type ConnectionStatus, type PollingState, type SymbolAlert, type Symbol as SymbolData, type SymbolHistory, type SymbolHistoryPoint, type SymbolValue } from "@/types/api";
 import { apiService } from "@/services/apiService";
 
 const MAX_HISTORY_POINTS = 50
@@ -15,6 +15,7 @@ export default function useSymbolPolling() {
         isPolling: false,
         interval: 2000,
     });
+    const [symbolAlerts, setSymbolAlerts] = useState<SymbolAlert[]>()
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<ApiError | null>(null);
 
@@ -105,9 +106,27 @@ export default function useSymbolPolling() {
         }))
     }, [])
 
+    // const setAlert = useCallback((symbolName: string, high: number | null, low: number | null) => {
+    //     setSymbolAlerts(prev => {
+    //         ...prev,
+    //         {
+    //             symbolName: symbolName,
+    //             high: Number(high),
+    //             low: Number(low)
+    //         },
+    //     })
+    // }, [])
+
+    // const removeAlert = useCallback(() => {
+    //     setSymbolAlerts(prev => ({
+    //         ...prev,
+    //         // delete symbolAlert
+    //     }))
+    // }, [])
+ 
     useEffect(() => {
         if (!pollingState.isPolling) return;
-        
+
         pollOnce();
         intervalRef.current = window.setInterval(pollOnce, pollingState.interval);
         return () => {
@@ -133,8 +152,10 @@ export default function useSymbolPolling() {
         pollingState,
         loading,
         error,
+        symbolAlerts,
         // authenticate,
         pollOnce, // using for refresh button in connection status
+        setSymbolAlerts,
         loadSymbols,
         startPolling,
         stopPolling,

@@ -73,6 +73,12 @@ export interface ApiError {
   cancelled?: boolean;
 }
 
+export interface SymbolAlert {
+  symbolName: string
+  highThreshold: number | null   // null = no high alert set
+  lowThreshold: number | null    // null = no low alert set
+}
+
 // Helper types
 export type Theme = 'light' | 'dark' | 'auto';
 export type ResolvedTheme = 'light' | 'dark';
