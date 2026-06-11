@@ -1,177 +1,184 @@
-# Practice — Function Callbacks vs Object Props
+# Practice — Function Callbacks, Lifting State & Prop Drilling
 
-*"Add a filterable, sortable symbol list component. The parent owns the data and filter state; child components handle display and user input. Wire them together with callback props."*
+*"Add a **Symbol Watch** panel. Each row in the main table gets a '+ Watch' button. Clicking it adds that symbol to a watch list shown in the sidebar. The panel shows each watched symbol's name and live status (Active / Stale / Inactive), with a button to remove it."*
+
+This is grounded in the **real app** — you'll wire into `SymbolsDashboard`, the `DataTableComponent` columns, `useSymbolPollingContext`, and `statusGenerator`.
 
 ---
 
 ## Concepts Covered
-- Passing functions as props (callbacks) vs passing objects
-- Inline arrow functions vs named handlers — when each is appropriate
-- Functional `setState` with callbacks
-- Why `onClick={handleClick}` and `onClick={() => handleClick()}` behave differently
-- The `children` prop pattern
+- Passing functions as props (callbacks) — child calls, parent decides
+- **Lifting state up** so two *siblings* can share it
+- Prop drilling, and when a closure can carry a callback for you
+- `onClick={fn}` vs `onClick={() => fn()}` — and `e.stopPropagation()`
+- Functional `setState` with immutable array updates + de-duping
+- **Derived** data: compute status, never store it
 
 ---
 
-## Background — The Core Distinction
+## Background — Who Owns The State?
 
-**Callback prop:** The parent passes a function down. The child calls it when something happens. The parent decides what to do. The child doesn't need to know.
+The table (adds to the watch list) and the watch panel (displays it) are **siblings** under `App`. A sibling cannot read another sibling's `useState`. So the shared list must live in their **lowest common parent** and flow down as props:
 
-```tsx
-// Parent owns the logic
-function Parent() {
-  const [filter, setFilter] = useState('')
-  return <SearchBox onSearch={setFilter} />  // passes a function
-}
-
-// Child just calls it
-function SearchBox({ onSearch }: { onSearch: (value: string) => void }) {
-  return <input onChange={e => onSearch(e.target.value)} />
-}
+```
+App  ← owns watchedSymbols here
+├── aside → <SymbolWatch watched={...} onRemove={...} />   (reads the list)
+└── main  → <SymbolsDashboard onAddToWatch={...} />        (adds to the list)
 ```
 
-**Object prop:** You pass data down. The child reads it. No behavior is delegated.
-
-```tsx
-<SymbolCard symbol={{ name: 'BusVoltage', value: 240 }} />
-```
-
-The question is always: *who should own the behavior?* If the parent needs to know about it, use a callback.
+**The rule:** when two components need the same state, move it up to the closest ancestor they share, and pass it down. Don't duplicate it in both — duplicated state drifts out of sync.
 
 ---
 
-## Step 1 — Define your types
+## Step 1 — Lift the watch state into `App.tsx`
 
-File: `src/types/filter.ts` (create it)
+In `App`, add:
 
-```ts
-export type SortOrder = 'asc' | 'desc'
+```tsx
+const [watchedSymbols, setWatchedSymbols] = useState<string[]>([])
+```
 
-export interface FilterState {
-  query: string
-  sortOrder: SortOrder
+Add two handlers (named, because they have real logic and get passed around):
+
+```tsx
+function addToWatch(name: string) {
+  // de-dupe: don't add a symbol that's already watched
+  setWatchedSymbols(prev => prev.includes(name) ? prev : [...prev, name])
+}
+
+function removeFromWatch(name: string) {
+  setWatchedSymbols(prev => prev.filter(n => n !== name))
 }
 ```
 
-**TypeScript note:** `SortOrder` is a union of string literals — not just `string`. This means TypeScript will error if you pass `'ascending'` by mistake. This is called a *string literal union* and is much safer than plain `string`.
+**Why functional `setState`?** Both updates derive from the previous list. `prev => ...` always sees the latest array — and it lets React batch correctly. Note both return a **new array** (`[...prev, name]`, `.filter(...)`), never mutating `prev`.
+
+**Question before you code:** why not store the watch list inside `useSymbolPolling` / the context instead? *(It's a fair option — the data is global-ish. But the lesson here is lifting to the common parent with explicit props. We'll discuss the context alternative in the Extension.)*
 
 ---
 
-## Step 2 — Build a FilterBar component
+## Step 2 — Build the `SymbolWatch` panel
 
-File: `src/components/FilterBar.tsx`
-
-Props it should accept:
-```ts
-interface FilterBarProps {
-  filter: FilterState           // current values (controlled — parent owns state)
-  onFilterChange: (next: FilterState) => void   // callback to update parent
-}
-```
-
-It should render:
-- A text input for the search query
-- A toggle button that switches between `asc` / `desc`
-
-**The trap — inline vs named handler:**
-
-This is fine:
-```tsx
-<input onChange={e => onFilterChange({ ...filter, query: e.target.value })} />
-```
-
-This is also fine:
-```tsx
-function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
-  onFilterChange({ ...filter, query: e.target.value })
-}
-<input onChange={handleQueryChange} />
-```
-
-This is a bug:
-```tsx
-<button onClick={onFilterChange({ ...filter, sortOrder: 'desc' })}>
-```
-`onClick` expects a *function*, not the *result of calling a function*. `onFilterChange(...)` returns `void` and runs immediately on render, not on click. You need `onClick={() => onFilterChange(...)}`.
-
-**When to use inline vs named:**
-- Inline: short, single-expression, no reuse needed
-- Named: multi-line logic, reused in multiple places, easier to read at a glance
-
----
-
-## Step 3 — Build a SymbolList component
-
-File: `src/components/SymbolList.tsx`
+File: `src/components/SymbolWatch.tsx`
 
 Props:
 ```ts
-interface SymbolListProps {
-  items: Array<{ name: string; value: number }>
-  onSelect: (name: string) => void
+interface SymbolWatchProps {
+  watched: string[]
+  onRemove: (name: string) => void
 }
 ```
 
-Render each item as a row. Clicking a row calls `onSelect(item.name)`.
+It should:
+1. Read **live values** from context — the watch list is just *names*; the current value/status is global data:
+   ```tsx
+   const { symbolValues } = useSymbolPollingContext()
+   ```
+2. For each watched name, look up its value and **derive** the status:
+   ```tsx
+   const value = symbolValues.get(name)
+   const status = value ? statusGenerator(value.lastUpdated) : "No data"
+   ```
+3. Render a row per symbol: the name, the status, and a **Remove** button that calls `onRemove(name)`.
+4. Show an empty state when `watched.length === 0`.
 
-**Question:** Should `SymbolList` sort or filter the items itself?
+**Trap — `onClick={fn}` vs `onClick={() => fn()}`:**
+```tsx
+<Button onClick={onRemove(name)}>      // ❌ calls onRemove during render, every render
+<Button onClick={() => onRemove(name)}>// ✅ passes a function; runs only on click
+```
+You need the arrow here because you're **capturing a specific `name`**. (Compare: `onClick={start}` in your Stopwatch needed no arrow — it took no argument.)
 
-*No — the parent passes already-filtered/sorted items. The component just renders what it receives. This keeps it dumb and reusable. Filtering logic belongs in the parent because it owns the filter state.*
+**Derived, not stored:** notice `status` is recomputed every render from live `symbolValues`. Do **not** put status in `useState` — it would instantly go stale as values poll in.
+
+Then drop `<SymbolWatch watched={watchedSymbols} onRemove={removeFromWatch} />` into the `aside` in `App.tsx`, near `<Stopwatch />`.
 
 ---
 
-## Step 4 — Wire it together in a parent
+## Step 3 — Add the "+ Watch" button to a table row
 
-File: `src/components/SymbolExplorer.tsx`
-
-This component:
-1. Owns `FilterState` in `useState`
-2. Has a hardcoded list of symbols (or import from your mock data)
-3. Computes the filtered+sorted list from state (derived — no extra state needed)
-4. Renders `<FilterBar>` and `<SymbolList>` with the right props
+The columns live in `SymbolsDashboard.tsx` as the module-level `export const columns`. To give a cell access to `onAddToWatch`, turn that constant into a **factory** that closes over the callback:
 
 ```tsx
-const filtered = items
-  .filter(s => s.name.toLowerCase().includes(filter.query.toLowerCase()))
-  .sort((a, b) =>
-    filter.sortOrder === 'asc'
-      ? a.name.localeCompare(b.name)
-      : b.name.localeCompare(a.name)
-  )
+export function createColumns(
+  onAddToWatch: (name: string) => void
+): ColumnDef<SymbolRow>[] {
+  return [
+    /* ...existing columns... */
+    {
+      id: "watch",
+      header: () => <span>Watch</span>,
+      cell: ({ row }) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation()              // ← the trap, see below
+            onAddToWatch(row.original.symbolName)
+          }}
+        >
+          + Watch
+        </Button>
+      ),
+    },
+  ]
+}
 ```
 
-**Key insight:** `filtered` is computed fresh every render from `items` and `filter`. No `useState` needed for it — that would be redundant state that can get out of sync.
+**Trap — `e.stopPropagation()`:** the whole `<TableRow>` already has `onClick={() => onRowClick?.(row.original)}` (it opens the detail dialog). Without `stopPropagation`, clicking your button **also** bubbles up and fires the row click — you'd add to watch *and* open the dialog. Stop the event at the button.
+
+**Why a factory?** A module-level `const columns` can't see `onAddToWatch` — that value only exists at runtime inside a component. Wrapping it in a function lets the cell **close over** the callback (same closure idea as your interval callbacks).
 
 ---
 
-## Step 5 — Selected symbol
+## Step 4 — Thread the callback down
 
-Add a `selectedSymbol` state to `SymbolExplorer`. When `onSelect` fires, set it. Render the selected symbol name below the list.
-
-**Question:** `onSelect` in `SymbolList` is typed as `(name: string) => void`. In the parent you write:
-
+In `App.tsx`:
 ```tsx
-<SymbolList onSelect={setSelectedSymbol} />
+<SymbolsDashboard
+  onSymbolClick={(name) => setSelectedSymbol(name)}
+  onAddToWatch={addToWatch}
+/>
 ```
 
-Why does this work without wrapping in an arrow function?
+In `SymbolsDashboard.tsx`, accept the prop and build columns from it:
+```tsx
+interface SymbolsDashboardProps {
+  onSymbolClick: (name: string) => void
+  onAddToWatch: (name: string) => void
+}
+// ...inside the component:
+const columns = createColumns(onAddToWatch)
+```
 
-*`setSelectedSymbol` from `useState` already has the signature `(value: string) => void` — it matches exactly. You only need `() => setSelectedSymbol(name)` if you need to capture a specific value at definition time, or if the signatures don't match.*
+**Key insight:** you pass `columns` to `<DataTableComponent>` exactly as before. The callback rides **inside the column closure**, so `DataTableComponent` needs **zero** changes — it never sees `onAddToWatch`. That's the difference between *prop drilling* (threading a prop through every layer) and letting a closure carry the dependency for you.
+
+---
+
+## Step 5 — De-dupe and immutability (you did this in Step 1, now verify it)
+
+- Click "+ Watch" on the same symbol twice → it should appear **once**. That's the `prev.includes(name) ? prev : [...prev, name]` guard.
+- Returning `prev` unchanged when it's a duplicate means React **skips the re-render** (same reference) — a nice efficiency freebie.
+- Remove uses `.filter()` → new array, original untouched.
+
+**Question:** would a `Set<string>` be a better data structure here than an array? *(It auto-dedupes and has O(1) lookup. Trade-off: you must copy it immutably — `new Set(prev)` — and Sets don't serialize/map as ergonomically in JSX. Either is defensible; be ready to justify.)*
 
 ---
 
 ## Verification
 
-1. Type in the search box — the list narrows in real time.
-2. Toggle sort — the list re-orders.
-3. Click a symbol — it appears as "selected" below the list.
-4. Clear the search — all symbols reappear.
-5. Check: does the sort order persist when you type in the search box? (It should — both live in the same `FilterState` object.)
+1. Click "+ Watch" on a symbol → it appears in the sidebar panel.
+2. The panel's status updates as polling runs (Active → Stale → Inactive) — because status is **derived from live `symbolValues`**, not stored.
+3. Click "+ Watch" on the same symbol twice → only one entry.
+4. Click "+ Watch" → it must **not** also open the detail dialog (stopPropagation working).
+5. Remove a symbol → it leaves the panel; the table is unaffected.
+6. Clicking a row (not the button) still opens the detail view as before.
 
 ---
 
 ## Extension
 
-- Add a "clear filters" button that resets `FilterState` to `{ query: '', sortOrder: 'asc' }` in a single `setFilter` call (not two separate calls).
-- Add a `count` display: "Showing 3 of 10 symbols".
-- Lift `selectedSymbol` up: what would you change if a *sibling* component (not a child) also needed to know which symbol is selected?
+- **Watch count / cap:** show "Watching 3 of 50" and disable "+ Watch" past a cap.
+- **Persist:** mirror `watchedSymbols` to `localStorage` so it survives reload (where does the read/write go — render, effect, or handler?).
+- **The context question:** refactor so the watch list lives in `useSymbolPolling`/context instead of `App`. What gets simpler (no prop drilling)? What gets worse (less explicit data flow, harder to test in isolation)? When is each the right call?
+- **`table.meta`:** the tanstack-idiomatic alternative to a column factory — pass `onAddToWatch` via `useReactTable({ meta: { onAddToWatch } })` and read it in the cell with `table.options.meta`. Requires a TS module-augmentation of `TableMeta`. Compare to the factory approach.

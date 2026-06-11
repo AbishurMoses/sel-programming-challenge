@@ -11,6 +11,7 @@ import UserMenu from './components/UserMenu'
 import ConnectionStatus from './components/ConnectionStatus'
 import { Toaster } from './components/ui/sonner'
 import { Stopwatch } from './components/Stopwatch'
+import DebouncedSearch from './components/DebouncedSearch'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isTokenValid())
@@ -33,6 +34,7 @@ function App() {
               <main className="flex-1 flex flex-col min-[1060px]:flex-row gap-4 w-full px-4 pt-4">
                 <aside className="flex flex-col gap-4 w-full min-[1060px]:w-80 min-[1060px]:shrink-0">
                   <Stopwatch />
+                  <DebouncedSearch />
                   <ConnectionStatus />
                   <UserMenu />
                 </aside>
