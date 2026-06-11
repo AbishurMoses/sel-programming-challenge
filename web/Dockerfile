@@ -8,7 +8,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 ENV VITE_USE_MOCKS=true
-ENV VITE_BASE_URL=https://192.168.3.2/api/v1
+ENV VITE_BASE_URL=/api/v1
 
 RUN yarn build
 
