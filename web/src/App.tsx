@@ -12,14 +12,24 @@ import ConnectionStatus from './components/ConnectionStatus'
 import { Toaster } from './components/ui/sonner'
 import { Stopwatch } from './components/Stopwatch'
 import DebouncedSearch from './components/DebouncedSearch'
+import SymbolWatch from './components/SymbolWatch'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isTokenValid())
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [watchedSymbols, setWatchedSymbols] = useState<string[]>([])
 
   apiService.onUnauthorized = () => {
     window.location.reload();
   };
+
+  const addToWatch = (name: string) => {
+    setWatchedSymbols(prev => prev.includes(name) ? prev : [...prev, name])
+  }
+
+  const removeFromWatch = (name: string) => {
+    setWatchedSymbols(prev => prev.filter(exists => exists !== name))
+  }
   return (
     <TooltipProvider>
       <div>
@@ -34,12 +44,13 @@ function App() {
               <main className="flex-1 flex flex-col min-[1060px]:flex-row gap-4 w-full px-4 pt-4">
                 <aside className="flex flex-col gap-4 w-full min-[1060px]:w-80 min-[1060px]:shrink-0">
                   <Stopwatch />
+                  <SymbolWatch watchedSymbols={watchedSymbols} removeFromWatch={removeFromWatch} />
                   <DebouncedSearch />
                   <ConnectionStatus />
                   <UserMenu />
                 </aside>
                 <div className="flex-1 min-w-0">
-                  <SymbolsDashboard onSymbolClick={(name) => setSelectedSymbol(name)} />
+                  <SymbolsDashboard removeFromWatch={removeFromWatch} addToWatch={addToWatch} watchedSymbols={watchedSymbols} onSymbolClick={(name) => setSelectedSymbol(name)} />
                 </div>
 
                 <Dialog open={!!selectedSymbol} onOpenChange={(open) => !open && setSelectedSymbol(null)}>

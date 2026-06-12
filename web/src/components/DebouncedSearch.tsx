@@ -38,7 +38,7 @@ export default function DebouncedSearch() {
     )
 
     return (
-        <Card>
+        <Card className="w-full max-w-sm">
             <CardHeader>
                 <CardTitle>Debounced Search</CardTitle>
             </CardHeader>
@@ -57,7 +57,7 @@ export default function DebouncedSearch() {
                             </p>
                         }))
                     }
-                    {input.length > 0 && results.length === 0 && !isSearching  && (
+                    {input.length > 0 && results.length === 0 && !isSearching && (
                         <p>No matches</p>
                     )}
                     {input.length === 0 && (

@@ -2,7 +2,7 @@ import type { Symbol as SymbolData, SymbolValue } from "@/types/api";
 import { DataTableComponent } from "./DataTableComponent";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "./ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Minus, Plus } from "lucide-react";
 import { Card } from "./ui/card";
 import { useSymbolPollingContext } from "@/context/SymbolPollingContext";
 import { statusGenerator } from "@/lib/utils";
@@ -12,11 +12,14 @@ import { useEffect, useState } from "react";
 
 interface SymbolsDashboardProps {
     onSymbolClick: (name: string) => void;
+    addToWatch: (name: string) => void;
+    watchedSymbols: string[]
+    removeFromWatch: (name: string) => void
 }
 
 type SymbolRow = SymbolData & Partial<SymbolValue> & { symbolName: string };
 
-export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProps) {
+export default function SymbolsDashboard({ onSymbolClick, addToWatch, watchedSymbols, removeFromWatch }: SymbolsDashboardProps) {
     const {
         symbols,
         symbolValues,
@@ -53,6 +56,8 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
         };
     });
 
+    const columns = createColumns(addToWatch, watchedSymbols, removeFromWatch)
+
     if (loading && rows.length === 0) {
         return <TableSkeleton />
     }
@@ -88,83 +93,116 @@ export default function SymbolsDashboard({ onSymbolClick }: SymbolsDashboardProp
     )
 }
 
-export const columns: ColumnDef<SymbolRow>[] = [
-    {
-        accessorKey: "symbolName",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Symbol Name
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-    },
-    {
-        accessorKey: "stVal",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Value
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-        cell: ({ row }) => {
-            const v = row.original.stVal;
-            return <div>{v ?? "—"}</div>;
+export function createColumns(
+    addToWatch: (name: string) => void,
+    watchedSymbols: string[],
+    removeFromWatch: (name: string) => void,
+): ColumnDef<SymbolRow>[] {
+    return [
+        {
+            accessorKey: "symbolName",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Symbol Name
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
         },
-    },
-    {
-        accessorKey: "t",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Timestamp
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-        cell: ({ row }) => <div>{row.original.t ?? "—"}</div>,
-    },
-    {
-        accessorKey: "lastUpdated",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Last Updated
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-        cell: ({ row }) => {
-            const lastUpdated = row.original.lastUpdated;
-            if (!lastUpdated) return <div>—</div>;
-            const secondsAgo = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-            return (
-                <div >
-                    {secondsAgo}s ago
-                </div>
-            );
+        {
+            accessorKey: "stVal",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Value
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const v = row.original.stVal;
+                return <div>{v ?? "—"}</div>;
+            },
         },
-    },
-    {
-        accessorKey: "status",
-        header: () => (
-            <Button variant="ghost">
-                Status
-            </Button>
-        ),
-        cell: ({ row }) => {
-            const lastUpdated = row.original.lastUpdated;
-            if (!lastUpdated) return <div>—</div>;
-            return (
-                <p>{statusGenerator(lastUpdated)}</p>
-            )
+        {
+            accessorKey: "t",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Timestamp
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => <div>{row.original.t ?? "—"}</div>,
         },
-    },
-];
+        {
+            accessorKey: "lastUpdated",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Last Updated
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const lastUpdated = row.original.lastUpdated;
+                if (!lastUpdated) return <div>—</div>;
+                const secondsAgo = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+                return (
+                    <div >
+                        {secondsAgo}s ago
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "status",
+            header: () => (
+                <Button variant="ghost">
+                    Status
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const lastUpdated = row.original.lastUpdated;
+                if (!lastUpdated) return <div>—</div>;
+                return (
+                    <p>{statusGenerator(lastUpdated)}</p>
+                )
+            },
+        },
+        {
+            accessorKey: "actions",
+            header: () => (
+                <p>Actions</p>
+            ),
+            cell: ({ row }) => {
+                const lastUpdated = row.original.lastUpdated;
+                if (!lastUpdated) return <div>—</div>;
+                return (
+                    <div>
+                        {!watchedSymbols.includes(row.original.name) ? (
+                            <Button onClick={(e) => {
+                                e.stopPropagation()
+                                addToWatch(row.original.name)
+                            }}><Plus /></Button>
+                        ) : (
+                            <Button onClick={(e) => {
+                                e.stopPropagation()
+                                removeFromWatch(row.original.name)
+                            }}><Minus /></Button>
+                        )}
+                    </div>
+
+                )
+            },
+        },
+    ]
+}
+
